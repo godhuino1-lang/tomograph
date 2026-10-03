@@ -32,6 +32,32 @@ public interface TomographModule {
     Set<String> targetClassNames();
 
     /**
+     * Methods this module wants to see <b>regardless of which class declares them</b>.
+     *
+     * <p>Needed because a framework's extension point is often an <em>interface</em>: instrumenting
+     * the interface does nothing, the code lives in implementations, and the set of implementations
+     * is open - providers ship new ones, applications write their own, tests pass doubles. A list of
+     * known class names drifts with every upstream release and silently misses the user's own class.
+     *
+     * <p>So a module can name a <b>signature</b> instead. The parameter types inside a descriptor
+     * usually contain the framework's package, which makes the descriptor itself a strong
+     * discriminator: {@code doChat} alone might be anything, but
+     * {@code doChat(Ldev/langchain4j/model/chat/request/ChatRequest;)...} is LangChain4j's.
+     *
+     * <p>Cost, stated plainly: matching by signature means the engine must look inside classes it
+     * would otherwise skip with one hash lookup. It does that cheaply - a method's name is always
+     * present in the class's constant pool, so a byte-level search rejects almost everything before
+     * any parsing happens - but this is still work on somebody else's class-loading path. Declare
+     * signature cut points only where a class-name list genuinely cannot work.
+     *
+     * <p>See ADR 0006 for the LangChain4j case that motivated this, including the two ways an
+     * obvious-looking choice produces a wrong call tree without raising an error.
+     */
+    default Set<MethodCutPoint> targetMethods() {
+        return Set.of();
+    }
+
+    /**
      * Rewrite the given class, or return {@code null} to leave it alone.
      *
      * @param loader        the defining loader, may be {@code null} for bootstrap classes
