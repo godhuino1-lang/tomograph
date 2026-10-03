@@ -1,0 +1,17 @@
+# Line endings: the author develops on Windows, CI runs on Linux.
+# Without this, every checkout rewrites whole files and real diffs drown in noise.
+* text=auto eol=lf
+
+# Windows-only scripts must keep CRLF
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Binaries: never touch
+*.jar   binary
+*.png   binary
+*.jpg   binary
+*.zip   binary
+
+# Generated output should never appear in diffs or language stats
+target/**  -diff -merge linguist-generated=true
+*.tomograph-cassette binary
