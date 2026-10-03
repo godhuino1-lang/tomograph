@@ -1,5 +1,7 @@
 # Tomograph
 
+[![CI](https://github.com/godhuino1-lang/tomograph/actions/workflows/ci.yml/badge.svg)](https://github.com/godhuino1-lang/tomograph/actions/workflows/ci.yml)
+
 > 给 JVM 上的 AI Agent 做**断层扫描**：不改一行业务代码，看清 Agent 内部发生了什么；并把一次真实运行**原样重放**出来。
 
 医学上做 CT 不用开刀，就能重建你身体内部的三维结构。Tomograph 做的是同一件事，只不过扫描对象是**运行中的 JVM 里的 AI Agent**。
