@@ -45,6 +45,7 @@
 | `tomograph-semconv` | OpenTelemetry GenAI 语义约定的**唯一**落点：属性键、span 命名规则、`tomograph.*` 自有键。零编译期依赖，只为了让规范升级是"改一个文件"而不是"全项目 grep"。 |
 | `tomograph-exporter-otlp` | 零依赖的 OTLP/HTTP JSON 导出：只用 JDK 的 `HttpClient`，不引 OpenTelemetry SDK、protobuf、Jackson 或任何第三方 HTTP 客户端。见 [ADR 0003](docs/adr/0003-zero-dependency-otlp.md)。 |
 | `tomograph-examples/tomograph-example-fakeagent` | 一个刻意写得很笨的假 Agent，用来验证管线和写集成测试。 |
+| `tomograph-report-html` | 离线报告：把一份 OTLP/JSON 读回成 span 树，渲染成**一个自包含 HTML 文件**（内联 CSS、无脚本、无外链、无字体）。**这个模块可以用 Jackson**——ADR 0003 的零依赖规矩针对的是"注入别人 JVM 的 agent"，不针对在开发者机器上读文件的离线工具。见 [ADR 0005](docs/adr/0005-offline-report-input.md)。 |
 
 **规划中的模块**（在对应里程碑有真实内容时创建）：
 
@@ -52,7 +53,6 @@
 |---|---|---|
 | `tomograph-instrumentation-langchain4j` | v0.1 | LangChain4j 切点（ASM 字节码改写） |
 | `tomograph-instrumentation-springai` | v0.2 | Spring AI 切点 |
-| `tomograph-report-html` | v0.2 | 自包含单文件 HTML 报告 |
 | `tomograph-replay` | v1.0 | 录制 / 确定性重放内核 |
 
 ## SPI 设计
@@ -118,6 +118,7 @@ Agent 是多轮的、可能异步、可能流式、可能在虚拟线程里并�
 | **离线可用库清单是项目的一条硬边界** | `dev/langchain4j` 与 `org/springframework/ai` 完全不存在；`io/opentelemetry/*` 目录存在但 0 个 jar | 依赖必须事先确认 jar 真的在本地（看版本子目录，别只看 artifact 目录）；未缓存的依赖只能在联网环境预拉 |
 | **ASM 9.7 拒绝 Java 25/26 的 class 文件（major 69/70）** | 实测：同一源文件以 `--release 17/21/25/26` 编译后用不同 ASM 读取。9.7 对 69/70 抛 `IllegalArgumentException: Unsupported class file major version`（来自 `ClassReader` 构造函数，即宿主类加载路径上）；9.9.1 四者全部可读 | 插桩引擎的 ASM 家族必须统一钉 **9.9.1**（需一次预拉，见 [docs/prefetch-list.md](docs/prefetch-list.md)）；可插桩的 class 版本边界 = **61–70**。详见 [ADR 0004](docs/adr/0004-instrumentation-strategy.md) |
 | 本地仓库同类构件版本不齐 | `asm` 到 9.9.1，但 `asm-commons` 只到 9.7、`asm-util` 只到 8.0 | 任何"多构件配套使用"的库，都要逐个构件确认最高可用版本，不能只看其中一个 |
+| **Windows PowerShell 5.1 会把无 BOM 的 UTF-8 文件按 ANSI 读** | `learning/check-links.ps1` 的第一版写了几行中文提示，运行时中文变成乱码（`涓 Heng`），其中一处**直接让解析器报 `UnexpectedToken`**，脚本完全跑不起来 | 为这个环境写的 `.ps1` **一律只用 ASCII**（三个验收脚本和链接检查器都遵守这条）。需要中文输出时让 **Java** 程序去打印（配 `-Dstdout.encoding=UTF-8`），不要在 PowerShell 字符串里写中文 |
 
 ### 本地开发命令（本机沙箱约束下）
 
