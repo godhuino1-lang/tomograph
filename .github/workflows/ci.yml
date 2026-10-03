@@ -36,6 +36,26 @@ jobs:
       - name: Build
         run: mvn -B -ntp clean verify
 
+      # A skipped test and a passing test look identical from the outside: both leave the
+      # job green. DynamicAttachTest skips itself wherever the attach mechanism is
+      # unavailable - which is correct on a developer's sandboxed machine, and would be a
+      # silent lie on a Linux runner, where attach must work. This step removes that
+      # ambiguity: on Linux the test is required to have actually run.
+      - name: Require the attach integration test to have run (Linux only)
+        if: runner.os == 'Linux'
+        run: |
+          report=tomograph-examples/tomograph-example-fakeagent/target/surefire-reports/TEST-io.github.godhuino1.tomograph.examples.fakeagent.DynamicAttachTest.xml
+          if [ ! -f "$report" ]; then
+            echo "::error::DynamicAttachTest produced no report at $report"
+            exit 1
+          fi
+          skipped=$(sed -n 's/.*skipped="\([0-9]*\)".*/\1/p' "$report" | head -1)
+          if [ "$skipped" != "0" ]; then
+            echo "::error::DynamicAttachTest was skipped (skipped=$skipped) on Linux, where the attach mechanism is expected to work. The agentmain path is then unverified."
+            exit 1
+          fi
+          echo "DynamicAttachTest ran (skipped=$skipped): the agentmain path is covered."
+
       - name: Agent smoke test (Linux only)
         if: runner.os == 'Linux'
         run: |

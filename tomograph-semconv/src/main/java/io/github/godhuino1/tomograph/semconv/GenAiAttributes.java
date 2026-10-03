@@ -4,21 +4,28 @@ package io.github.godhuino1.tomograph.semconv;
  * OpenTelemetry GenAI semantic convention attribute keys.
  *
  * <p><b>Status: NOT YET VERIFIED against a specific spec revision.</b> These keys were
- * written from working knowledge because the development sandbox has no route to
- * either {@code opentelemetry.io} (the docs site renders its tables client-side, so a
- * text fetch returns only navigation) or {@code raw.githubusercontent.com} (DNS is
- * blocked; jsDelivr redirects there).
+ * written from working knowledge, because the development sandbox could not reach the
+ * specification text: {@code opentelemetry.io} renders its tables client-side (a text fetch
+ * returns only navigation), {@code raw.githubusercontent.com} is DNS-blocked, the GitHub
+ * contents API was rate-limited, and the CDN mirrors were unreachable.
  *
- * <p>Verification is therefore an open task, not an assumption. Before v0.1 ships,
- * each key must be checked against:
+ * <p><b>The conventions have also moved.</b> Fetching {@code docs/gen-ai/gen-ai-spans.md}
+ * from {@code open-telemetry/semantic-conventions} now returns a 396-byte pointer rather
+ * than content: the GenAI conventions live in their own repository,
+ * {@code https://github.com/open-telemetry/semantic-conventions-genai}, where the attribute
+ * registry sits under {@code docs/registry/} and the pages under {@code docs/gen-ai/}.
+ * Anything still linking to the old paths — this comment included, until this edit — points
+ * at a page that is no longer maintained.
+ *
+ * <p>Verification is therefore an open task, not an assumption. Before v0.1 ships, each key
+ * must be checked against:
  * <ul>
- *   <li>{@code https://opentelemetry.io/docs/specs/semconv/registry/attributes/gen-ai/}
- *       (the site reported "Semantic conventions 1.44.0" at the time of writing)</li>
- *   <li>{@code https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/} for the
- *       span naming and required-attribute rules</li>
+ *   <li>{@code https://github.com/open-telemetry/semantic-conventions-genai} —
+ *       {@code docs/registry/attributes/gen-ai.md} for the attribute names and their types</li>
+ *   <li>the same repository's span pages for naming rules and required attributes</li>
  * </ul>
- * and any mismatch fixed here. {@link GenAiAttributesTest} pins the current strings, so
- * the correction will be a visible diff rather than a silent drift.
+ * and any mismatch fixed here. {@link GenAiAttributesTest} pins the current strings, so a
+ * correction shows up as a visible diff rather than as silent drift.
  *
  * <p>Why this module exists at all: the project's stated role is to be a <em>consumer</em>
  * of these conventions, never an inventor of its own. Centralising the keys means a

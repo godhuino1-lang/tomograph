@@ -46,6 +46,6 @@
 | agent 自身类加载未做严格隔离 | v0.2 |
 | JUnit 5 与 surefire 已接入并可离线运行；仍缺覆盖率门禁与 CI 测试报告 | v0.1 |
 | Maven Wrapper 未引入，依赖本机 Maven 3.9+ | v0.1 |
-| **`GenAiAttributes` 的属性名未对 OTel semconv 1.44.0 逐条核对**（开发沙箱无法访问 opentelemetry.io 的表格与 raw.githubusercontent.com） | v0.1 前必须核对，见类注释里的两个核对 URL |
+| **`GenAiAttributes` 的属性名未对 GenAI 语义约定逐条核对** | v0.1 前必须核对。**规范已迁移**：GenAI 约定搬到了独立仓库 `open-telemetry/semantic-conventions-genai`，旧的 `semantic-conventions` 路径只剩一个 396 字节的指针页。核对 URL 见类注释（旧 URL 已作废） |
 | **OTLP/JSON 的编码细节未对规范逐条核对**（int64 写成字符串、traceId 用十六进制而非 base64、intValue 加引号、span kind 用数字、status.code 0/1/2） | v0.1 前必须核对，见 `OtlpPayloadBuilder` 类注释里的清单；当前由黄金测试锁死 |
-| 动态 attach（agentmain）路径未验证——开发沙箱禁止命名管道，`jcmd` 都不可用 | 首次推送到 GitHub 后由 Linux CI 覆盖 |
+| ~~动态 attach（agentmain）路径未验证~~ **已由 CI 覆盖**：`DynamicAttachTest` 真起 JVM → attach → 加载 agent → 断言目标 JVM 日志；另有一个 CI 步骤强制它在 Linux 上**必须执行**（被跳过即构建失败） | 已还清 |
