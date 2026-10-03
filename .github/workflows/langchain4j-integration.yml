@@ -1,0 +1,61 @@
+name: LangChain4j integration
+
+# A workflow of its own, deliberately.
+#
+# The default build must stay green on a machine that cannot download anything, so the
+# real-framework test lives behind the with-langchain4j profile and out of the main CI job. But
+# "out of the main job" must not become "never run": the reflective attribute extraction (ADR 0008)
+# can only be checked against a real jar, and a CI runner is the one place that can obtain one.
+#
+# Separate file rather than another job in ci.yml so that the main badge keeps meaning "the build
+# works". A failure here is information about the instrumentation module - probably an accessor name
+# that has moved - and it should be readable as exactly that, not as a broken project.
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  real-langchain4j:
+    name: Real LangChain4j on JDK 21
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # No -o: this job exists precisely because it can download what the development machine
+      # cannot. If the download fails, that is a real failure worth seeing.
+      - name: Build with the LangChain4j profile
+        run: mvn -B -ntp -Pwith-langchain4j verify
+
+      # Same reasoning as the attach test in ci.yml: a test that silently did not run and a test
+      # that passed look identical from outside the job. This one has no skip path, so a missing
+      # report means the module was not in the reactor at all - which is exactly the kind of wiring
+      # mistake the profile could hide.
+      - name: Require the real-framework test to have run
+        run: |
+          report=tomograph-integration-tests/target/surefire-reports/TEST-io.github.godhuino1.tomograph.integration.LangChain4jRealFrameworkTest.xml
+          if [ ! -f "$report" ]; then
+            echo "::error::no surefire report at $report - the integration module was not built, or the test never ran"
+            exit 1
+          fi
+          tests=$(sed -n 's/.*tests="\([0-9]*\)".*/\1/p' "$report" | head -1)
+          skipped=$(sed -n 's/.*skipped="\([0-9]*\)".*/\1/p' "$report" | head -1)
+          if [ "$skipped" != "0" ] || [ "$tests" -lt 1 ]; then
+            echo "::error::tests=$tests skipped=$skipped - expected the test to run and pass"
+            exit 1
+          fi
+          echo "LangChain4jRealFrameworkTest ran against the real framework: tests=$tests skipped=$skipped"

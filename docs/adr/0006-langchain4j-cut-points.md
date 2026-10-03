@@ -105,6 +105,23 @@ doChat(ChatRequest) → java.util.concurrent.Flow$Publisher（响应式，@since
 
 **明确排期而不是"以后再说"**：漏掉一条路径的表现是"某些应用完全没有数据"，而不是报错——**必须写在纸面上，否则它会以"用户报 bug"的形式回来**。
 
+### ⚠️ 流式切点不是"同一个模式换个方法名"
+
+这一点必须写下来，否则它会被当成机械工作，然后在实现时才发现不是。
+
+阻塞式切点可以在**返回指令之前**收尾，因为响应就在操作数栈上——当前实现正是这么做的（`DUP` 一份给探针，一份留给 `ARETURN`）。
+
+而 `doChat(ChatRequest, StreamingChatResponseHandler)` 是 **void 且立即返回**的：响应要等 `handler.onCompleteResponse(...)` 被回调时才出现，可能晚几百毫秒甚至几秒。而 `gen_ai.response.time_to_first_chunk`（首个 chunk 的延迟）**恰恰是流式场景下用户最关心的数字之一**。
+
+所以流式切点至少需要新的设计：
+
+1. span 的生命周期从"方法返回"改成"回调完成"——跨调用边界的配对
+2. 流中断或出错时如何收尾（`onError`）
+3. 同一个 handler 上的多次回调如何归并（partial / complete / tool call）
+4. 首 chunk 时间单独记账
+
+**结论：它是 v0.1 之后的第一件事，但它是一块独立的设计工作，不是一次复制粘贴。**
+
 ## 对引擎的影响（这是本 ADR 真正的成本）
 
 现在的 `InstrumentationEngine` 按**精确类名**路由（`TomographModule.targetClassNames()`）。决策 2 需要一种新的路由模式：

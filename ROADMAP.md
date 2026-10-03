@@ -21,8 +21,8 @@
 > ① 切点只实现了**阻塞式**那一条（流式/异步/响应式已排期，见 ADR 0006）；
 > ② token 与成本只做到"读取 token 数"，**成本计算与逐条对齐还没做**；
 > ③ **P99 开销未测**（JMH 未接入）。
-> 另外，**针对真 jar 的集成测试已经写好并挂进 `-Pwith-langchain4j` profile**，但一次都没跑过——因为本地仓库里还没有那个 jar。
-> 换句话说：**挡住 v0.1 完成的是一个 `mvn dependency:get`**，不是任何未写的代码。
+> 另外，**针对真 jar 的集成测试已经写好并挂进 `-Pwith-langchain4j` profile**，而且**有一个独立 workflow 在 CI 上跑它**（`.github/workflows/langchain4j-integration.yml`）——因为 CI 有网络而开发机没有。
+> 换句话说：**挡住 v0.1 完成的是一个 `mvn dependency:get`，不是任何未写的代码。** 那个 profiled workflow 会替我们完成它，只是要等一次推送。
 
 - [ ] 业务代码 **0 改动**，只加 `-javaagent` 参数即生效
 - [ ] 采集 **≥5 类语义切点**：Agent 轮次 / LLM 调用 / 工具调用（含副作用）/ 检索 / 嵌入
