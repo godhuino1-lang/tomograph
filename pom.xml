@@ -26,6 +26,7 @@
     <module>tomograph-exporter-otlp</module>
     <module>tomograph-core</module>
     <module>tomograph-javaagent</module>
+    <module>tomograph-report-html</module>
     <module>tomograph-examples</module>
   </modules>
 
@@ -48,6 +49,12 @@
       already cached fails the build outright. Bump deliberately, and verify.
     -->
     <junit.version>5.12.2</junit.version>
+    <!--
+      Jackson is used by tomograph-report-html only. The agent stays dependency-free
+      (ADR 0003) because it is injected into somebody else's JVM; an offline report
+      generator that runs over a file has no such constraint. See ADR 0005.
+    -->
+    <jackson.version>2.19.4</jackson.version>
     <plugin.compiler.version>3.13.0</plugin.compiler.version>
     <plugin.surefire.version>3.5.6</plugin.surefire.version>
     <plugin.shade.version>3.6.0</plugin.shade.version>
@@ -87,6 +94,12 @@
         <artifactId>junit-jupiter-engine</artifactId>
         <version>${junit.version}</version>
         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>${jackson.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

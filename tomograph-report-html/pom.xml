@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>io.github.godhuino1-lang</groupId>
+    <artifactId>tomograph-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>tomograph-report-html</artifactId>
+  <name>Tomograph :: Report :: HTML</name>
+  <description>Turns a captured OTLP/JSON payload into one self-contained HTML file</description>
+
+  <dependencies>
+    <!--
+      Jackson is allowed here and remains forbidden inside the agent. ADR 0003's
+      zero-dependency rule exists because the agent is injected into somebody else's JVM,
+      where a shaded library can collide with the host's own copy of it, and where an
+      extra megabyte of jar is paid by every application that turns instrumentation on.
+      This module runs offline, on a developer's machine, over a file. None of that
+      reasoning transfers. See docs/adr/0005-offline-report-input.md.
+    -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+    </dependency>
+  </dependencies>
+</project>
