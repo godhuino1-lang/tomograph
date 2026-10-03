@@ -127,6 +127,7 @@ Agent 是多轮的、可能异步、可能流式、可能在虚拟线程里并�
 | **ASM 9.7 拒绝 Java 25/26 的 class 文件（major 69/70）** | 实测：同一源文件以 `--release 17/21/25/26` 编译后用不同 ASM 读取。9.7 对 69/70 抛 `IllegalArgumentException: Unsupported class file major version`（来自 `ClassReader` 构造函数，即宿主类加载路径上）；9.9.1 四者全部可读 | 插桩引擎的 ASM 家族必须统一钉 **9.9.1**（需一次预拉，见 [docs/prefetch-list.md](docs/prefetch-list.md)）；可插桩的 class 版本边界 = **61–70**。详见 [ADR 0004](docs/adr/0004-instrumentation-strategy.md) |
 | 本地仓库同类构件版本不齐 | `asm` 到 9.9.1，但 `asm-commons` 只到 9.7、`asm-util` 只到 8.0 | 任何"多构件配套使用"的库，都要逐个构件确认最高可用版本，不能只看其中一个 |
 | **Windows PowerShell 5.1 会把无 BOM 的 UTF-8 文件按 ANSI 读** | `learning/check-links.ps1` 的第一版写了几行中文提示，运行时中文变成乱码（`涓 Heng`），其中一处**直接让解析器报 `UnexpectedToken`**，脚本完全跑不起来 | 为这个环境写的 `.ps1` **一律只用 ASCII**（三个验收脚本和链接检查器都遵守这条）。需要中文输出时让 **Java** 程序去打印（配 `-Dstdout.encoding=UTF-8`），不要在 PowerShell 字符串里写中文 |
+| **PowerShell 会吃掉 `-D` 开头的参数** | 同一命令两种写法的实测对比：`mvn dependency:get -Dartifact=dev.langchain4j:langchain4j-core:1.21.0` → Maven 报 `Plugin not found in any plugin repository: .langchain4j:langchain4j-core`（**它收到的是裸坐标**，于是按「插件前缀:目标」解析）；把整个参数加引号后同一个命令正常按 artifact 解析 | **`-D` 参数一律整体加引号**（`"-Dartifact=..."`）。本项目已因此栽 **6 次**，前 5 次都在脚本里。更稳的原则是**绕开需要 `-D` 的路径**：能用 pom 里声明的依赖让 Maven 自己下载，就不要用 `dependency:get` |
 
 ### 本地开发命令（本机沙箱约束下）
 

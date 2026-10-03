@@ -1,49 +1,74 @@
 # 预拉依赖清单（需要一次联网）
 
-开发沙箱**没有对外网络**，Maven 本地仓库 `D:\java+python\maven1` 也**不可写**。所以下面这些东西必须在一个**普通终端**（不是通过 DSH 的会话）里预拉一次，之后离线构建才能用到它们。
+开发沙箱**没有对外网络**，Maven 本地仓库 `D:\java+python\maven1` **在沙箱里不可写**——但**在你的普通终端里是可写的**，你上一次运行已经证明了这一点：它成功下载了 `maven-dependency-plugin:3.7.0`。所以下面这些东西必须在一个**普通终端**（不是通过 DSH 的会话）里拉一次。
 
-> 预拉后请回来告诉我结果，我会把对应版本钉进 `pom.xml`。
+> ## ⚠️ 先读这个：PowerShell 会吃掉 `-D` 参数（已实证）
+>
+> 同一个命令的两种写法，Maven 实际收到的东西不一样：
+>
+> | 写法 | Maven 收到的 | 结果 |
+> |---|---|---|
+> | `mvn dependency:get -Dartifact=dev.langchain4j:langchain4j-core:1.21.0` | 一个**裸坐标** `dev.langchain4j:...` | ✗ 它把这个记号当成「插件前缀:目标」去解析 → `Plugin not found in any plugin repository: .langchain4j:langchain4j-core` |
+> | `mvn dependency:get "-Dartifact=dev.langchain4j:langchain4j-core:1.21.0"` | 完整的 `-Dartifact=...` | ✔ 正常按 artifact 解析 |
+>
+> **结论：`-D` 开头的参数一律整体加引号。**
+> 本项目已经在这件事上栽过 **6 次**（前 5 次都在我这边的脚本里：`git commit -m` 多行、`javap -J-D…`、`java -Dstdout.encoding…`）。
+>
+> **更稳的思路：能不用 `-D` 就不用。** 见下面第 0 节。
 
-## 1. ASM 家族补齐到 9.9.1（插桩引擎的前置条件）
+---
 
-**为什么必须做**：实测（见 [ADR 0004](adr/0004-instrumentation-strategy.md)）表明 `asm-commons` 离线最高只有 **9.7**，而 ASM 9.7 **拒绝** Java 25/26 编译出的 class 文件（major 69/70），异常直接从 `ClassReader` 构造函数抛出——那是在宿主 JVM 的类加载路径上。而 `AdviceAdapter` 就在 `asm-commons` 里。
+## 0. 最简单的路：**不要用 `dependency:get`**
+
+`langchain4j-core` 已经作为依赖声明在 `tomograph-integration-tests/pom.xml` 里了。所以**让 Maven 自己去下载**就行——**没有任何 `-D` 参数可以被打乱**：
 
 ```powershell
-mvn dependency:get -Dartifact=org.ow2.asm:asm-commons:9.9.1
-mvn dependency:get -Dartifact=org.ow2.asm:asm-util:9.9.1
-mvn dependency:get -Dartifact=org.ow2.asm:asm-tree:9.9.1
-mvn dependency:get -Dartifact=org.ow2.asm:asm-analysis:9.9.1
+cd D:\github\tomograph
+mvn -B -ntp -Pwith-langchain4j verify
 ```
 
-顺带解决一件事：你的作业 3 需要 **ASMifier**，而 `asm-util` 离线只有 5.0.3 和 8.0。补上 9.9.1 之后 `ASMifier` / `Textifier` / `CheckClassAdapter` 就都能用了。
+这一条命令会：下载 `dev.langchain4j:langchain4j-core:1.21.0` → 编译集成测试 → **真的运行它** → 直接告诉你 v0.1 到底过没过。
 
-**验证是否成功**（每个都应输出 `True`）：
+（这正是 `.github/workflows/langchain4j-integration.yml` 里 CI 跑的那一条，所以如果你先推送，CI 也会替你做。）
+
+## 1. LangChain4j（只想单独预拉时）
+
+**版本已核实**：`1.21.0`——2026-10 从 jsDelivr 的版本 API 读到的最新 release，不再需要你人工确认。
 
 ```powershell
-Test-Path 'D:\java+python\maven1\org\ow2\asm\asm-commons\9.9.1\asm-commons-9.9.1.jar'
-Test-Path 'D:\java+python\maven1\org\ow2\asm\asm-util\9.9.1\asm-util-9.9.1.jar'
+mvn dependency:get "-Dartifact=dev.langchain4j:langchain4j-core:1.21.0"
 ```
 
-## 2. LangChain4j（v0.1 的「LangChain4j 切点」的前置条件）
+`dev.langchain4j:langchain4j`（聚合 artifact）**现在不需要**：集成测试只需要 `core`，它自己不带任何 provider。
 
-**为什么必须做**：`dev/langchain4j` 在本地仓库里**完全不存在**（不是版本旧，是根本没有），而沙箱不能联网。不预拉，v0.1 的切点就只能停在纸面上。
-
-先查当前最新稳定版（我无法联网核对版本号，需要你确认）：
-
-- https://central.sonatype.com/artifact/dev.langchain4j/langchain4j
-
-然后用查到的版本号执行（把 `<VERSION>` 换成实际值）：
+**验证**：
 
 ```powershell
-mvn dependency:get -Dartifact=dev.langchain4j:langchain4j-core:<VERSION>
-mvn dependency:get -Dartifact=dev.langchain4j:langchain4j:<VERSION>
+Test-Path 'D:\java+python\maven1\dev\langchain4j\langchain4j-core\1.21.0\langchain4j-core-1.21.0.jar'
+```
+
+## 2. ASM 家族（**目前不挡任何事**，可以往后放）
+
+原先这一节被我写成"插桩引擎的前置条件"——**那是错的**，现在改正：agent 和 LangChain4j 模块都**只用 `asm-core`**（本地一直有 9.9.1），而
+
+- `AdviceAdapter`（在 `asm-commons`）：ADR 0006 里**明确不用**；
+- `CheckClassAdapter`（在 `asm-util`）：只是关 3 的**可选进阶**。
+
+所以这条只在两种情况需要：你想在关 3 里用 `CheckClassAdapter` 校验自己生成的字节码，或者将来决定改用 `AdviceAdapter`。
+
+```powershell
+mvn dependency:get "-Dartifact=org.ow2.asm:asm-commons:9.9.1"
+mvn dependency:get "-Dartifact=org.ow2.asm:asm-util:9.9.1"
+mvn dependency:get "-Dartifact=org.ow2.asm:asm-tree:9.9.1"
 ```
 
 **验证**：
 
 ```powershell
-Get-ChildItem 'D:\java+python\maven1\dev\langchain4j' -Recurse -Filter *.jar | Select-Object -ExpandProperty Name
+Test-Path 'D:\java+python\maven1\org\ow2\asm\asm-util\9.9.1\asm-util-9.9.1.jar'
 ```
+
+补上 `asm-util` 之后，`ASMifier` / `Textifier` / `CheckClassAdapter` 就都能用了——它们是你关 3 的调试家当（见 [glossary.md](glossary.md) 的「调试工具家当」）。
 
 ## 注意
 
