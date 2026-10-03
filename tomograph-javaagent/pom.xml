@@ -30,6 +30,17 @@
       <artifactId>tomograph-exporter-otlp</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!--
+      Shaded in as well, and for a related reason: an instrumentation module supplied by the host
+      application builds W3C-shaped ids with TraceContext, so that class has to be on a classpath
+      the module can see. Without it the module fails at class-loading time with
+      NoClassDefFoundError, which the end-to-end test would report as "the agent exported nothing".
+    -->
+    <dependency>
+      <groupId>io.github.godhuino1-lang</groupId>
+      <artifactId>tomograph-semconv</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 
   <build>

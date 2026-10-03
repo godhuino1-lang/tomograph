@@ -26,6 +26,16 @@
       <artifactId>tomograph-api</artifactId>
     </dependency>
     <!--
+      For TraceContext: a W3C span id is 16 hex characters, and building ids by hand is how this
+      module once shipped 32-character span ids that no backend would accept. At runtime these
+      classes come from the agent jar, which shades the module in - so there is still no compile
+      dependency on the agent itself.
+    -->
+    <dependency>
+      <groupId>io.github.godhuino1-lang</groupId>
+      <artifactId>tomograph-semconv</artifactId>
+    </dependency>
+    <!--
       Test scope only. DynamicAttachTest spawns a real JVM and attaches the built agent jar
       to it, which is the only way to prove the agentmain path: the development sandbox
       blocks named pipes, so the attach mechanism cannot be exercised there at all.
