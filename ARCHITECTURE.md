@@ -42,13 +42,13 @@
 | `tomograph-api` | 纯 SPI 与数据模型，**零第三方依赖**。宿主和插桩模块都只依赖它。 |
 | `tomograph-core` | 插桩引擎：类名分发、上下文采集、agent 启动引导。 |
 | `tomograph-javaagent` | 打包成 `-javaagent` 可用的 fat jar（shade + manifest）。 |
+| `tomograph-semconv` | OpenTelemetry GenAI 语义约定的**唯一**落点：属性键、span 命名规则、`tomograph.*` 自有键。零编译期依赖，只为了让规范升级是"改一个文件"而不是"全项目 grep"。 |
 | `tomograph-examples/tomograph-example-fakeagent` | 一个刻意写得很笨的假 Agent，用来验证管线和写集成测试。 |
 
 **规划中的模块**（在对应里程碑有真实内容时创建）：
 
 | 模块 | 创建时机 | 职责 |
 |---|---|---|
-| `tomograph-semconv` | v0.1 | OpenTelemetry GenAI 语义约定的常量与映射 |
 | `tomograph-instrumentation-langchain4j` | v0.1 | LangChain4j 切点（ASM 字节码改写） |
 | `tomograph-exporter-otlp` | v0.1 | OTLP 编码与导出 |
 | `tomograph-instrumentation-springai` | v0.2 | Spring AI 切点 |
