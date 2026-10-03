@@ -46,12 +46,13 @@
 | `tomograph-exporter-otlp` | 零依赖的 OTLP/HTTP JSON 导出：只用 JDK 的 `HttpClient`，不引 OpenTelemetry SDK、protobuf、Jackson 或任何第三方 HTTP 客户端。见 [ADR 0003](docs/adr/0003-zero-dependency-otlp.md)。 |
 | `tomograph-examples/tomograph-example-fakeagent` | 一个刻意写得很笨的假 Agent，用来验证管线和写集成测试。 |
 | `tomograph-report-html` | 离线报告：把一份 OTLP/JSON 读回成 span 树，渲染成**一个自包含 HTML 文件**（内联 CSS、无脚本、无外链、无字体）。**这个模块可以用 Jackson**——ADR 0003 的零依赖规矩针对的是"注入别人 JVM 的 agent"，不针对在开发者机器上读文件的离线工具。见 [ADR 0005](docs/adr/0005-offline-report-input.md)。 |
+| `tomograph-instrumentation-langchain4j` | LangChain4j 切点：按**签名**路由并改写 `doChat`。**刻意不依赖 LangChain4j**（连编译期也不依赖）——注入的字节码里一个框架类型都不出现，所以框架升级最多让某个属性消失，不可能在宿主里造成链接错误。见 [ADR 0006](docs/adr/0006-langchain4j-cut-points.md)、[ADR 0008](docs/adr/0008-injected-code-references-only-our-probe.md)。 |
+| `tomograph-integration-tests` | 需要**真实第三方 jar** 在 classpath 上的测试（目前是 LangChain4j）。**不在默认构建里**：用 `mvn -o -Pwith-langchain4j verify` 运行。默认构建必须保持绿色，不能因为一次下载没发生就变红。 |
 
 **规划中的模块**（在对应里程碑有真实内容时创建）：
 
 | 模块 | 创建时机 | 职责 |
 |---|---|---|
-| `tomograph-instrumentation-langchain4j` | v0.1 | LangChain4j 切点（ASM 字节码改写） |
 | `tomograph-instrumentation-springai` | v0.2 | Spring AI 切点 |
 | `tomograph-replay` | v1.0 | 录制 / 确定性重放内核 |
 

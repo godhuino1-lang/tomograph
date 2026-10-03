@@ -126,4 +126,26 @@
       </plugins>
     </pluginManagement>
   </build>
+
+  <!--
+    The LangChain4j integration test lives behind a profile rather than in the default build.
+
+    Reason: that module needs the framework's jar, and this development environment cannot fetch
+    Maven artefacts at all (see ARCHITECTURE.md). A default build that fails because a download did
+    not happen trains everyone to ignore a red build. Once the jar is in the local repository:
+
+      mvn -o -Pwith-langchain4j verify
+
+    What it proves, and why nothing else can: the module reads its attributes reflectively, so the
+    accessor names are strings (ADR 0008). Only a real jar can say whether the first candidate name
+    is still the right one.
+  -->
+  <profiles>
+    <profile>
+      <id>with-langchain4j</id>
+      <modules>
+        <module>tomograph-integration-tests</module>
+      </modules>
+    </profile>
+  </profiles>
 </project>

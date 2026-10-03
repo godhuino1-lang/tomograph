@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>io.github.godhuino1-lang</groupId>
+    <artifactId>tomograph-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>tomograph-integration-tests</artifactId>
+  <name>Tomograph :: Integration Tests</name>
+  <description>Tests that need a real third-party framework on the classpath, so they run behind a profile</description>
+
+  <!--
+    Not in the default build: see the `with-langchain4j` profile in the parent pom.
+
+    Only langchain4j-core is needed, and that is worth stating because it is easy to assume
+    otherwise: the test writes its own ChatModel implementation, so no provider module (OpenAI,
+    Ollama, ...) has to be present. One artefact, no API key, no network at test time.
+  -->
+  <dependencies>
+    <dependency>
+      <groupId>io.github.godhuino1-lang</groupId>
+      <artifactId>tomograph-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.github.godhuino1-lang</groupId>
+      <artifactId>tomograph-instrumentation-langchain4j</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.github.godhuino1-lang</groupId>
+      <artifactId>tomograph-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <!--
+      Pinned deliberately rather than ranged. The reflective attribute extraction is verified against
+      a specific version's source (ADR 0008), so "which version" is part of the claim being tested,
+      not an implementation detail. 1.21.0 was the newest release when this was written.
+    -->
+    <dependency>
+      <groupId>dev.langchain4j</groupId>
+      <artifactId>langchain4j-core</artifactId>
+      <version>1.21.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+    </dependency>
+  </dependencies>
+</project>
