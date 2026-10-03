@@ -1,0 +1,124 @@
+# 学习与推进计划
+
+这份计划把「你自己要写的代码」和「项目要长出来的东西」绑在同一条时间线上。每个阶段都写明**交付物**和**完成标志**——没有可检验的标志，阶段就不算结束。
+
+适配的时间线：研一 2026 秋入学 → 研二下（2028 春）投暑期实习。
+
+## 练习的用法：空白版 + 答案版
+
+每一个练习都有两份：
+
+| | 位置 | 用途 |
+|---|---|---|
+| **空白版** | `learning/dayNN-*/` | 你写的地方。结构、方法签名、注释都在，方法体是 TODO |
+| **答案版** | `learning/answers/dayNN-*/` | 卡住时对照。**先自己想 30 分钟再看** |
+
+建议的顺序，别跳：
+
+1. 读空白版的注释和 TODO——它们本身就在讲该做什么
+2. 自己写。允许查 JVMS / ASM 文档 / `javap` 输出
+3. 卡住超过 30 分钟 → 看空白版里的提示梯子（`learning/README.md`）
+4. 还卡住 → 看答案版，但**看完要合上，自己重写一遍**
+5. **用验收脚本证明它过了**，而不是"我看着差不多"
+
+> 直接抄答案版能让你今天通过验收，但会让你在 2028 年面试时答不出"Long 常量为什么占两个槽位"。
+> 面试官问的从来不是"你写过吗"，而是"为什么是这样"。
+
+---
+
+## 阶段 0：地基（已完成，2026.10）
+
+**已经能跑的东西**：7 个模块的 Maven 仓库、CI 六格矩阵（JDK 17/21/25 × Linux/Windows）全绿、
+OTLP/HTTP 导出器（零第三方依赖，40 个测试）、W3C Trace Context、core 引擎测试、
+动态 attach 集成测试（由 CI 强制必须真执行）、语义约定与 OTLP 协议两处规范核对完毕。
+
+**完成标志**：`mvn -o clean verify` 全绿；GitHub 上 CI 徽章为 passing。
+
+---
+
+## 阶段 1：三关（第 1–3 周）— 目标是把字节码从"魔数"变成你能读写的东西
+
+### 关 1（第 1–2 周）：class 文件解析器
+
+- **空白版**：`learning/day01-classdump/ClassDump.java`
+- **答案版**：`learning/answers/day01-classdump/ClassDump.java`
+- **要做**：读 class 文件头（magic / minor / major / constant_pool_count / this_class），再把整个常量池 dump 出来
+- **完成标志**：`.\check-day01.ps1` 对**全部 7 个** class 文件输出 PASS（素材里含枚举、接口、内部类、匿名类）
+- **必须能答**：`constant_pool_count` 为什么比实际项数大 1？哪类常量占两个槽位、为什么？
+
+### 关 2（第 3–4 周）：第一个 javaagent
+
+- **空白版**：`learning/day03-agent/`
+- **答案版**：`learning/answers/day03-agent/`
+- **要做**：`premain` 挂载、`ClassFileTransformer` 拦截、打印**指定方法的耗时与入参**——被观测的类源码一个字不改
+- **完成标志**：目标应用输出不变，agent 在 stderr 打出 `[agent] Foo.bar(String) took 1234 ns, args=[...]`
+- **必须能答**：agent 的类由哪个 ClassLoader 加载？为什么这会是问题？`transform` 返回 `null` 和返回原数组有什么区别？
+
+### 关 3（第 5–7 周）：手写 ASM 方法插桩
+
+- **空白版**：`learning/day05-asm/`
+- **答案版**：`learning/answers/day05-asm/`
+- **要做**：用 `ClassReader` + `ClassWriter` + `AdviceAdapter` 在方法进出插桩，把关 2 的 agent 升级成真正的字节码改写
+- **完成标志**：`javap -c -p` 能看到你插入的指令；改写后的类能被 JVM 正常加载执行
+- **必须能答**：为什么 `retransformClasses` 不能给已加载的类加字段？`COMPUTE_FRAMES` 干了什么？
+
+### 并行（第 1–3 周，约 4 小时）：LLM 应用速成
+
+- **要做**：不用框架直接调一次 chat completions API，把请求/响应 JSON 原样打印；然后在 IDE 里画出 LangChain4j 的 `ChatModel` / `ToolSpecification` / `EmbeddingStore` / `AiServices` 关系
+- **完成标志**：能回答"要在 LangChain4j 里切一刀采集模型调用，我切哪个方法，为什么"
+
+---
+
+## 阶段 2：v0.1 内核（第 4–8 周）— 引擎先在自己可控的目标上跑通
+
+**前置**：联网终端执行 `docs/prefetch-list.md` 里的预拉（ASM 家族补齐到 9.9.1、LangChain4j）。
+
+- **交付物**：`tomograph-instrumentation-fakeagent`（切点表 + ASM 改写）、`InstrumentationEngine` 接入真实改写、JMH 基准骨架
+- **要做的关键技术决策**：切接口还是切实现；`ClassLoader` 隔离方案；插桩开销如何测量
+- **完成标志**：挂上 agent 后，假 Agent 的方法调用被**真实改写**并产出 span；改写后的字节码通过 `CheckClassAdapter` 校验；异常路径（改写失败）不破坏宿主
+- **风险**：`AdviceAdapter` 在构造器与 try-finally 上容易翻车——这是本题最容易卡住的地方
+
+---
+
+## 阶段 3：v0.1 完成（第 9–16 周）— 真实框架 + 兼容矩阵
+
+- **交付物**：`tomograph-instrumentation-langchain4j`、JDK 17/21/25 全矩阵集成测试、JMH 开销报告、`v0.1.0` release
+- **完成标志**（这些数字就是简历上的数字来源）：
+  - 宿主应用零改动，只加 `-javaagent`
+  - 采集 ≥5 类语义切点：Agent 轮次 / LLM 调用 / 工具调用（含副作用）/ 检索 / 嵌入
+  - token 与成本与 provider 返回值逐条对齐
+  - **P99 插桩开销 < 2%**（JMH 可复现）
+  - CI 全绿，且 LangChain4j 每个受支持版本都有集成测试钉住
+- **风险**：LangChain4j 升级导致切点失效——所以兼容矩阵必须进 CI，而不是写在文档里
+
+---
+
+## 阶段 4：开源首发（2027 暑假，唯一能整块投入的窗口）
+
+- **交付物**：`tomograph-instrumentation-springai`、英文 README、单文件离线 HTML 报告、发布文章、`v0.3` release
+- **完成标志**：GitHub 公开可访问、有人 star 或提 issue、能 5 分钟跑出一个可看的调用树
+- **为什么必须卡在这里**：到 2028 年 3 月投实习时，项目就有 8 个月公开历史——「持续维护」这个信号比代码本身更值钱
+
+---
+
+## 阶段 5：v1.0 录制与重放（研二上，2027.09–12）
+
+- **交付物**：cassette 格式、录制模式、确定性重放内核、轨迹 diff、故障注入
+- **完成标志**：把一次真实运行录下来，离线重放得到**逐字节相同**的 span 序列；改一版 prompt 后能 diff 出差异
+- **技术难点**：接管所有非确定性来源（时间、随机数、并发完成顺序、网络、工具副作用）；以及 ARCHITECTURE 里的「难题 2」——`ThreadLocal` 上下文在虚拟线程/异步下失效，必须换成显式携带的 `TraceContext`
+
+---
+
+## 阶段 6：投实习（研二下，2028.01–06）
+
+- **交付物**：简历 2 条量化 bullet、30 分钟深挖问答的准备稿、项目 README 的"为什么"叙事
+- **完成标志**：能对着任何一条 bullet 往下讲三层为什么，且每一层都有证据（测试、基准、CI 记录、ADR）
+- **准备方式**：把 `docs/adr/` 里每一份 ADR 当成一道面试题来复习——它们记录的正是"为什么不那样做"
+
+---
+
+## 贯穿全程的三条纪律
+
+1. **写下来的才算知道。** 每个"暂时不确定"都要变成 ROADMAP 里的一行债，或一份 ADR。这个项目已经证明过：不写下来的假设会在最关键的时候错。
+2. **验证你的验证手段。** 一个只会说"通过"的检查脚本比没有更危险。项目里已经因此抓到三次错（`catch` 兜底成"可用"、少看一层目录、按扩展名过滤漏文件）。
+3. **构建绿灯不等于行为完好。** 每个功能都要有一个"真的跑一遍"的验证（冒烟测试、端到端跑一次、CI 断言），而不只是编译通过。
