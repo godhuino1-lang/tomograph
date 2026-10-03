@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>io.github.godhuino1-lang</groupId>
+    <artifactId>tomograph-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>tomograph-exporter-otlp</artifactId>
+  <name>Tomograph :: Exporter :: OTLP</name>
+  <description>Ships captured spans to any OTLP/HTTP backend using only the JDK.</description>
+
+  <!--
+    No OpenTelemetry SDK, no protobuf, no Jackson, and no HTTP client library.
+
+    Two reasons, both load-bearing:
+
+    1. This code runs INSIDE somebody else's application. Every dependency added
+       here is a version conflict waiting to happen in a host that already has its
+       own Jackson, its own HTTP client, and its own opinions about logging.
+    2. OTLP/HTTP accepts a JSON encoding, and the JDK has shipped an HTTP client
+       since Java 11. That covers the whole requirement with zero third-party code.
+
+    See docs/adr/0003-zero-dependency-otlp.md for the full reasoning and for the
+    specification details that had to be implemented by hand.
+  -->
+  <dependencies>
+    <dependency>
+      <groupId>io.github.godhuino1-lang</groupId>
+      <artifactId>tomograph-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+    </dependency>
+  </dependencies>
+</project>

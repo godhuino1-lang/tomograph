@@ -47,4 +47,5 @@
 | JUnit 5 与 surefire 已接入并可离线运行；仍缺覆盖率门禁与 CI 测试报告 | v0.1 |
 | Maven Wrapper 未引入，依赖本机 Maven 3.9+ | v0.1 |
 | **`GenAiAttributes` 的属性名未对 OTel semconv 1.44.0 逐条核对**（开发沙箱无法访问 opentelemetry.io 的表格与 raw.githubusercontent.com） | v0.1 前必须核对，见类注释里的两个核对 URL |
+| **OTLP/JSON 的编码细节未对规范逐条核对**（int64 写成字符串、traceId 用十六进制而非 base64、intValue 加引号、span kind 用数字、status.code 0/1/2） | v0.1 前必须核对，见 `OtlpPayloadBuilder` 类注释里的清单；当前由黄金测试锁死 |
 | 动态 attach（agentmain）路径未验证——开发沙箱禁止命名管道，`jcmd` 都不可用 | 首次推送到 GitHub 后由 Linux CI 覆盖 |

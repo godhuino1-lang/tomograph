@@ -23,6 +23,7 @@
   <modules>
     <module>tomograph-api</module>
     <module>tomograph-semconv</module>
+    <module>tomograph-exporter-otlp</module>
     <module>tomograph-core</module>
     <module>tomograph-javaagent</module>
     <module>tomograph-examples</module>

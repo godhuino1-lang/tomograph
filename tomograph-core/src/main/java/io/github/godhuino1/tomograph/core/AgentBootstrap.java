@@ -2,6 +2,7 @@ package io.github.godhuino1.tomograph.core;
 
 import io.github.godhuino1.tomograph.api.AgentOptions;
 import io.github.godhuino1.tomograph.api.SpanSink;
+import io.github.godhuino1.tomograph.api.SpanSinkProvider;
 import io.github.godhuino1.tomograph.api.TomographLog;
 import io.github.godhuino1.tomograph.api.TomographModule;
 import io.github.godhuino1.tomograph.api.TomographSpan;
@@ -24,6 +25,10 @@ import java.util.ServiceLoader;
  *   <li><b>Say what happened, on stderr.</b> If nothing appears in the logs, the user
  *       cannot tell "no agent ran" from "agent ran and found nothing".</li>
  * </ol>
+ *
+ * <p>Both extension points are discovered through {@link ServiceLoader} rather than
+ * compiled in: instrumentation modules decide <em>what</em> to capture, span sink
+ * providers decide <em>where it goes</em>. The core knows neither OTLP nor LangChain4j.
  */
 public final class AgentBootstrap {
 
@@ -55,8 +60,9 @@ public final class AgentBootstrap {
                 + " | " + options);
 
         try {
-            List<TomographModule> modules = loadModules();
-            SpanSink sink = new StderrSpanSink();
+            ClassLoader loader = resolveLoader();
+            List<TomographModule> modules = loadModules(loader);
+            SpanSink sink = resolveSink(options, loader);
             InstrumentationEngine engine = new InstrumentationEngine(modules, sink, options);
 
             for (TomographModule module : modules) {
@@ -79,15 +85,15 @@ public final class AgentBootstrap {
     }
 
     /**
-     * Discovers modules through {@link ServiceLoader}, preferring the thread context
-     * loader because in a Spring Boot fat jar the application's own modules live in
-     * a child loader, not in the loader that defined this class.
+     * Prefers the thread context loader: in a Spring Boot fat jar the application's own
+     * modules and sinks live in a child loader, not in the loader that defined this class.
      */
-    private static List<TomographModule> loadModules() {
+    private static ClassLoader resolveLoader() {
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        if (loader == null) {
-            loader = TomographModule.class.getClassLoader();
-        }
+        return (loader != null) ? loader : TomographModule.class.getClassLoader();
+    }
+
+    private static List<TomographModule> loadModules(ClassLoader loader) {
         List<TomographModule> found = new ArrayList<>();
         for (TomographModule module : ServiceLoader.load(TomographModule.class, loader)) {
             TomographLog.debug("discovered module " + module.id() + " via " + loader);
@@ -97,11 +103,70 @@ public final class AgentBootstrap {
     }
 
     /**
-     * Placeholder sink used until the OTLP exporter module exists (v0.1).
+     * Asks every {@link SpanSinkProvider} on the classpath for a sink and takes the first
+     * one that is configured.
      *
-     * <p>It is deliberately trivial: its purpose in the skeleton is to prove the
-     * engine-to-sink path works end to end. It writes only at debug level so that
-     * loading the agent on a real service does not flood stderr.
+     * <p>First-wins is deliberate. Fanning out to several destinations is a v1.0 concern:
+     * inventing a merge policy now would risk duplicate or reordered traces, which is a
+     * worse failure than having one destination. It also means a provider must answer
+     * honestly by returning {@code null} when it is not configured — see
+     * {@code OtlpSpanSinkProvider} for why that matters.
+     *
+     * <p>A provider that throws is skipped rather than fatal. The fallback sink always
+     * exists, so the worst possible outcome here is losing telemetry, never losing the
+     * host application.
+     */
+    private static SpanSink resolveSink(AgentOptions options, ClassLoader loader) {
+        for (SpanSinkProvider provider : ServiceLoader.load(SpanSinkProvider.class, loader)) {
+            try {
+                SpanSink sink = provider.create(options, TomographVersion.get());
+                if (sink != null) {
+                    TomographLog.info("span sink: " + provider.id());
+                    registerShutdownFlush(sink);
+                    return sink;
+                }
+                TomographLog.debug("span sink provider " + provider.id() + " is not configured");
+            } catch (Throwable t) {
+                TomographLog.error("span sink provider " + provider.id()
+                        + " failed to start; trying the next one", t);
+            }
+        }
+        TomographLog.info("span sink: stderr (no provider configured)");
+        return new StderrSpanSink();
+    }
+
+    /**
+     * Flushes whatever is still queued when the JVM exits.
+     *
+     * <p>Without this, buffered spans are simply lost. A sink queues on the hot path and
+     * writes from a background thread, so the last batch is usually still in memory when
+     * the process ends — and "the last run" is precisely the one somebody is trying to
+     * debug. Missing exactly that trace is a uniquely annoying failure.
+     *
+     * <p>The hook swallows everything. It runs during shutdown, where throwing achieves
+     * nothing except a confusing stack trace in somebody else's logs.
+     */
+    private static void registerShutdownFlush(SpanSink sink) {
+        try {
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                try {
+                    sink.close();
+                } catch (Throwable t) {
+                    TomographLog.warn("failed to flush spans during shutdown: " + t);
+                }
+            }, "tomograph-shutdown-flush"));
+        } catch (Throwable t) {
+            TomographLog.warn("could not register the shutdown flush hook: " + t);
+        }
+    }
+
+    /**
+     * The sink of last resort: every span to stderr, at debug level.
+     *
+     * <p>It exists so that {@code resolveSink} always has something to return — the agent
+     * must never be in a state where captured data has nowhere to go — and so that a run
+     * with no provider configured still visibly proves the engine-to-sink path works.
+     * Debug level keeps it from flooding a real service's logs.
      */
     private static final class StderrSpanSink implements SpanSink {
 

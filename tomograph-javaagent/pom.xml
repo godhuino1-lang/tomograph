@@ -19,6 +19,17 @@
       <groupId>io.github.godhuino1-lang</groupId>
       <artifactId>tomograph-core</artifactId>
     </dependency>
+    <!--
+      The exporter is a shaded dependency of the agent, never of tomograph-core: the
+      engine discovers sinks through ServiceLoader and stays ignorant of OTLP. See
+      tomograph-api's SpanSinkProvider. The version is spelled out rather than managed in
+      the parent so that adding a module does not require editing two files.
+    -->
+    <dependency>
+      <groupId>io.github.godhuino1-lang</groupId>
+      <artifactId>tomograph-exporter-otlp</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 
   <build>
