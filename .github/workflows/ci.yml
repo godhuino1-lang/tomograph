@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: JDK ${{ matrix.java }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # 17/21/25 are the LTS lines. Java 8 and 11 are intentionally absent:
+        # LangChain4j and Spring AI both require 17+, so there is no host
+        # application below 17 for this agent to observe.
+        java: [ '17', '21', '25' ]
+        os: [ ubuntu-latest, windows-latest ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: maven
+
+      - name: Build
+        run: mvn -B -ntp clean verify
+
+      - name: Agent smoke test (Linux only)
+        if: runner.os == 'Linux'
+        run: |
+          java -javaagent:tomograph-javaagent/target/tomograph-agent.jar \
+               -cp tomograph-examples/tomograph-example-fakeagent/target/classes \
+               io.github.tomograph.examples.fakeagent.Main
+
+      - name: Upload agent jar
+        if: matrix.java == '21' && runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tomograph-agent
+          path: tomograph-javaagent/target/tomograph-agent.jar
+          if-no-files-found: error

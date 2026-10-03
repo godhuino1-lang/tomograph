@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>io.github.tomograph</groupId>
+    <artifactId>tomograph-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>tomograph-api</artifactId>
+  <name>Tomograph :: API</name>
+  <description>SPI and data model. Zero third-party dependencies by design.</description>
+
+  <!--
+    Deliberately has NO <dependencies> section, and must keep it that way:
+    every instrumentation module and every host application depends on this
+    artifact, so anything added here becomes a version conflict in someone
+    else's build.
+  -->
+</project>
