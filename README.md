@@ -20,6 +20,20 @@ ERROR request failed
 
 更糟的是**你回不到那一刻**：模型每次回答都不一样，本地重跑复现不了线上问题。Agent 的调试因此长期停留在"玄学"阶段。
 
+### 为什么这个空白还在
+
+说"业界缺失"没有说服力，**说清别人为什么没做**才有——因为前者事后可以被任何新项目推翻，后者是一个能被检验的解释：
+
+1. **官方 OpenTelemetry Java agent 覆盖的是"厂商 SDK"，不是"框架层"。** 它的受支持库清单里提到 GenAI 的只有两项：`AWS SDK` 与 `OpenAI Java SDK 1.1+`。**LangChain4j、Spring AI 都不在其中。**
+2. **原因在插桩策略**：OTel 打的是厂商 SDK，而 LangChain4j 有自己的 HTTP 客户端、**不经过 `openai-java`**——所以官方那个零侵入 agent 看不见 LangChain4j 的模型调用。
+3. **JVM 上现有的 LLM 可观测方案都要改代码**：`instrument()` 调用、`@Agent` 注解、注册 `listeners(...)`、或主动调 SDK。**没有一个只要一个 `-javaagent` 参数。**
+4. **但"能采到 span"本身不是差异。** LangChain4j 自带 `ChatModelListener`，openinference 也已经覆盖 Java。**真正的差异在语义层**：打在 SDK 层的 agent 能给你 token 数与模型名，给不了"跑了几轮、每轮调了哪个工具、工具返回了什么、检索命中了什么"。
+
+所以本项目的价值主张是**精确的**：*在框架层零侵入地还原 Agent 的语义结构*，而不是"又一个能导出 OTLP 的工具"。
+
+> 完整对照（各项目 star 数、侵入方式、我们面临的四条风险）见 **[docs/prior-art.md](docs/prior-art.md)**。
+> **最大的风险写在明面上**：OTel 随时可以给 LangChain4j 加一个 instrumentation 模块，这不受我们控制——所以价值必须建立在语义层的深度与重放能力上，而不是"我们支持 LangChain4j"这一条事实。
+
 ## 它做什么
 
 **能力一：零侵入观测。** 应用启动时多加一个参数：

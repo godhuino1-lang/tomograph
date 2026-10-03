@@ -22,7 +22,8 @@
 - [ ] token 用量与成本**与 provider 返回值逐条对齐**（不是估算）
 - [ ] **P99 插桩开销 < 2%**（JMH 实测，可复现）
 - [ ] **JDK 17 / 21 / 25 × Linux / Windows CI 全绿**
-- [ ] 单文件离线 HTML 报告可打开
+
+> 单文件离线 HTML 报告**不属于 v0.1**（它是 v0.2 的交付物）。原先把它列在这里是错的：v0.1 的完成标准是"能看到完整的模型调用树并导入 Jaeger"。
 
 ## 目标简历 bullet（预先写下来，作为北极星）
 
@@ -36,7 +37,7 @@
 - [ ] 补英文 `README.md`，中文移到 `README.zh-CN.md`
 - [ ] 加 CI / 版本 / 覆盖率徽章
 - [ ] `v0.1.0` tag + GitHub Release，附 `tomograph-agent.jar`
-- [ ] 写一篇「为什么 Java 生态需要一个 Agent 观测层」的发布文章
+- [ ] 写一篇「为什么 Java 生态需要一个 Agent 观测层」的发布文章 —— **核心论证已经查明并记录在 [docs/prior-art.md](docs/prior-art.md)**：官方 agent 覆盖厂商 SDK 而非框架层，且这个空白的成因（LangChain4j 不走 `openai-java`）是可解释、可检验的
 
 ## 已知技术债（明确记账，不假装不存在）
 
