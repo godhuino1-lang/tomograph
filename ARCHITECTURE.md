@@ -90,7 +90,11 @@ Agent 是多轮的、可能异步、可能流式、可能在虚拟线程里并�
 - Reactor 的操作符边界会换线程
 - 线程池把同一个线程复用给两次完全不同的 Agent 运行
 
-见 `tomograph-core` 里的 `SpanCollector`——那个类目前是 ThreadLocal 实现，但文件头明确记录了它的已知失效场景。**正确解法是在插桩点显式捕获上下文快照并作为参数/属性传递，而不是依赖环境线程状态。** 这是 v1.0 之前必须解决的问题，不是可以糊过去的细节。
+见 `tomograph-core` 里的 `SpanCollector`——那个类目前是 ThreadLocal 实现，但文件头明确记录了它的已知失效场景。**正确解法是在插桩点显式捕获上下文快照并作为参数/属性传递，而不是依赖环境线程状态。**
+
+这个"显式载体"现在有了具体形态：[`TraceContext`](tomograph-semconv/src/main/java/io/github/godhuino1/tomograph/semconv/TraceContext.java)——一个不可变值对象，同时承载 W3C 的 trace id、span id 与采样标志，并能渲染成 `traceparent` 头用于跨进程传播。它刻意**不是**环境状态：插桩代码必须把它当作参数往下传。`SpanCollector` 暂时保留，仅为让最早的骨架能跑通，终将被移除。
+
+**必须在 v1.0 之前解决，不是可以糊过去的细节。**
 
 ### 难题 3：怎么做到"确定性"
 
