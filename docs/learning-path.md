@@ -38,6 +38,28 @@ OTLP/HTTP 导出器（零第三方依赖，40 个测试）、W3C Trace Context�
 
 ## 阶段 1：三关（第 1–3 周）— 目标是把字节码从"魔数"变成你能读写的东西
 
+> **阶段 1 的成功标准（唯一一条）**：你能从零写出一个 agent，挂上去打印任意方法的耗时和入参。
+
+### 必读材料（按关划分，只读够用的那部分）
+
+| 关 | 读什么 | 读到什么程度 |
+|---|---|---|
+| 1 | **JVMS 第 4 章**（Class File Format） | 4.1 的结构表 + 4.4 的常量池表。**建议把常量池所有 tag 和它们的结构抄在一张纸上**——这张纸你这一周会一直用 |
+| 2 | `java.lang.instrument` 的 javadoc | 吃透四条硬限制：`premain` 与 `agentmain` 的差别及各自约束；**`retransformClasses` 不能增删方法/字段、不能改签名**；agent jar 的类是怎么被 JVM 找到的（追加到 system class loader 搜索路径）；`transform` 返回 `null` / 原数组 / 新数组各意味着什么 |
+| 3 | **ASM User Guide 前 3 章** | 第 2 章（`ClassReader` / `ClassWriter` / `ClassVisitor`）是全部基础；第 3 章讲方法级改写 |
+| 并行 | LangChain4j 源码 | 见下面的接口清单 |
+
+### 调试工具家当（插桩排查全靠这四个）
+
+| 工具 | 用途 |
+|---|---|
+| `javap -c -p Foo.class` | 人肉读字节码。**遇到任何插桩问题，第一反应就是看它**——它是权威，你的猜想不是 |
+| `ASMifier` | 把现成的 class 打印成生成它的 ASM 代码。**抄着学最快，但每一行都要理解** |
+| `Textifier` | 把类打印成可读的指令列表（比 `javap` 更贴近 ASM 的视角） |
+| `CheckClassAdapter` | 校验你生成的字节码是否合法。⚠️ 需要 `asm-util` 9.9.1，见 `docs/prefetch-list.md` |
+
+> **Windows 上的一个坑**：给 `javap` 传 `-J-Dstdout.encoding=UTF-8` 时必须用数组传参（`@('...','...')` 展开），否则 PowerShell 会把参数拆坏，而失败信息看起来跟编码毫无关系。这个坑在本项目里踩过 **5 次**。
+
 ### 关 1（第 1–2 周）：class 文件解析器
 
 - **空白版**：`learning/day01-classdump/ClassDump.java`
@@ -69,8 +91,24 @@ OTLP/HTTP 导出器（零第三方依赖，40 个测试）、W3C Trace Context�
 
 ### 并行（第 1–3 周，约 4 小时）：LLM 应用速成
 
-- **要做**：不用框架直接调一次 chat completions API，把请求/响应 JSON 原样打印；然后在 IDE 里画出 LangChain4j 的 `ChatModel` / `ToolSpecification` / `EmbeddingStore` / `AiServices` 关系
-- **完成标志**：能回答"要在 LangChain4j 里切一刀采集模型调用，我切哪个方法，为什么"
+这块不占主线，但**必须在阶段 1 内补上**，否则阶段 3 你不知道该在哪里切。
+
+**概念**（能讲清就行，不用深入）：token 是什么、为什么它是计费单位；流式（streaming）与非流式响应的区别；function / tool calling 的请求-响应结构；embedding 与向量检索（RAG）的基本流程；ReAct 循环（思考 → 调工具 → 观察 → 再思考）。
+
+**动手**：直接调一次 OpenAI 兼容的 chat completions API（`curl` 或 `HttpClient` 都行，**刻意不用框架**），把请求体和响应体的 JSON 原样打印出来看一遍。
+
+**读框架**：在 IDE 里打开 LangChain4j 源码，找到这几个接口并画出继承关系：
+
+| 接口 | 为什么关心它 |
+|---|---|
+| `ChatModel` / `ChatLanguageModel` | 一次模型调用的必经之路，最可能的第一个切点 |
+| `ToolSpecification` / 工具执行入口 | 工具调用的"副作用"就发生在这里 |
+| `EmbeddingStore` / `ContentRetriever` | 检索与嵌入，对应规范里的 `embeddings` / `retrieval` 两类切点 |
+| `AiServices` | ⚠️ **它是动态代理生成的实现**——这意味着你**没法继承它来插桩**，只能从字节码层面切。这一个认识直接决定了项目的技术路线 |
+
+**完成标志**：能回答"要在 LangChain4j 里切一刀采集模型调用，我切哪个方法，为什么"。
+
+**顺手想一想（通向阶段 5）**：为什么 `ThreadLocal` 在虚拟线程和 `@Async` 场景下会丢上下文？现在答不上不要紧——那是 `ARCHITECTURE.md` 的难题 2，也是 v1.0 录制重放要解决的核心。
 
 ---
 

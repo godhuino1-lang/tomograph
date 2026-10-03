@@ -92,8 +92,8 @@ java -javaagent:tomograph-javaagent/target/tomograph-agent.jar \
 - [SCOPE.md](SCOPE.md) — 项目宪法：边界、3 年演化原则
 - [ARCHITECTURE.md](ARCHITECTURE.md) — 模块划分、数据流、三个真正的技术难题
 - [ROADMAP.md](ROADMAP.md) — 里程碑与时间表
-- [docs/week-01-plan.md](docs/week-01-plan.md) — 第一周任务清单
+- [docs/learning-path.md](docs/learning-path.md) — 分阶段学习与推进计划：每阶段的交付物、完成标志与必读材料
 
 ## 许可
 
-Apache License 2.0（LICENSE 文件在仓库创建时通过 GitHub 模板添加）。
+Apache License 2.0。**LICENSE 文件尚未添加**——请用 GitHub 的模板一键生成，不要手抄：许可证是一份法律文件，凭记忆重建它存在写错条款的风险。
