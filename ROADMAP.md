@@ -7,7 +7,7 @@
 | 时间 | 版本 | 目标 | 完成标准（Definition of Done） | 状态 |
 |---|---|---|---|---|
 | 2026.10–12 | — | 补课 + PoC | 能自己写出「不改业务代码打印任意方法耗时入参」的 agent | 🟡 进行中 |
-| 2027.01–03 | `v0.1` | LangChain4j 首个切点 + OTLP | 挂上 agent 能看到完整的模型调用树并导入 Jaeger | ⬜ |
+| 2027.01–03 | `v0.1` | LangChain4j 首个切点 + OTLP。**切点已定**：切最内层的 `doChat(ChatRequest)`，且按**方法签名**匹配而非类名清单——[ADR 0006](docs/adr/0006-langchain4j-cut-points.md) | 挂上 agent 能看到完整的模型调用树并导入 Jaeger | ⬜ |
 | 2027.04–06 | `v0.2` | 工具/检索/成本切点 + 离线报告 | 单文件 HTML 报告可离线打开；CI 矩阵 JDK 17/21/25 全绿 | ⬜ |
 | **2027.07–08** | **`v0.3` 开源首发** | Spring AI 适配 + JMH 基准 | GitHub 公开仓库 + `v0.1.0` release + 英文 README + 开销数字进 README | ⬜ |
 | 2027.09–12 | `v1.0` | 稳定 API + 录制重放内核 | 能把一次真实运行确定性重放并 diff | ⬜ |
