@@ -46,21 +46,25 @@ OTLP/HTTP 导出器（零第三方依赖，40 个测试）、W3C Trace Context�
 - **完成标志**：`.\check-day01.ps1` 对**全部 7 个** class 文件输出 PASS（素材里含枚举、接口、内部类、匿名类）
 - **必须能答**：`constant_pool_count` 为什么比实际项数大 1？哪类常量占两个槽位、为什么？
 
-### 关 2（第 3–4 周）：第一个 javaagent
+### 关 2（第 3–4 周）：把 javaagent 管线打通（**本关不改写字节码**）
 
-- **空白版**：`learning/day03-agent/`
-- **答案版**：`learning/answers/day03-agent/`
-- **要做**：`premain` 挂载、`ClassFileTransformer` 拦截、打印**指定方法的耗时与入参**——被观测的类源码一个字不改
-- **完成标志**：目标应用输出不变，agent 在 stderr 打出 `[agent] Foo.bar(String) took 1234 ns, args=[...]`
-- **必须能答**：agent 的类由哪个 ClassLoader 加载？为什么这会是问题？`transform` 返回 `null` 和返回原数组有什么区别？
+- **空白版**：`learning/day03-agent/Agent.java`（素材 `Target.java` / `manifest.txt` 共用，不要改）
+- **答案版**：`learning/answers/day03-agent/Agent.java`
+- **要做**：`premain` 与 `agentmain` 两个入口、注册一个**只观察**的 `ClassFileTransformer`、对**已经加载过**的类强制 `retransformClasses`、以及把一切包进 `catch (Throwable)`
+- **完成标志**：`.\check-day02.ps1` 输出 `ALL CHECKS PASS`，具体检查四件事——
+  挂 agent 与不挂 agent **应用输出逐字节相同**；agent 报告看到了 `Target` 加载；agent 打出了 `[RETRANSFORM]`；没有任何异常
+- **必须能答**：agent 的类由哪个 ClassLoader 加载？为什么这会成为问题？`transform` 返回 `null` 和返回原数组有什么区别？为什么 retransform 不能在 `premain` 里立刻做？
+
+> **为什么本关不要求"打印耗时与入参"**：那需要真的往方法体里插指令，也就是字节码改写——那是关 3。
+> 把顺序拆开的好处是：关 2 结束时你已经有一条**能跑通的完整管线**，关 3 只需专注在字节码本身。
+> 一开始就让两者混在一起，是最容易两头都卡住的做法。
 
 ### 关 3（第 5–7 周）：手写 ASM 方法插桩
 
-- **空白版**：`learning/day05-asm/`
-- **答案版**：`learning/answers/day05-asm/`
-- **要做**：用 `ClassReader` + `ClassWriter` + `AdviceAdapter` 在方法进出插桩，把关 2 的 agent 升级成真正的字节码改写
-- **完成标志**：`javap -c -p` 能看到你插入的指令；改写后的类能被 JVM 正常加载执行
-- **必须能答**：为什么 `retransformClasses` 不能给已加载的类加字段？`COMPUTE_FRAMES` 干了什么？
+- **空白版 / 答案版**：`learning/day05-asm/` 与 `learning/answers/day05-asm/`
+- **要做**：用 `ClassReader` + `ClassWriter` + 自写 `MethodVisitor` 往方法里插指令，实现**耗时与入参**上报——也就是关 2 当初那句验收的真正归属
+- **完成标志**：`javap -c -p` 能看到你插入的指令；改写后的类能被 JVM 正常加载并执行；`CheckClassAdapter` 校验通过
+- **必须能答**：为什么 `retransformClasses` 不能给已加载的类加字段？`COMPUTE_FRAMES` 干了什么？为什么本关**不用** `AdviceAdapter`？
 
 ### 并行（第 1–3 周，约 4 小时）：LLM 应用速成
 
