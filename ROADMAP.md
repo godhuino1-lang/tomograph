@@ -44,5 +44,7 @@
 |---|---|
 | `SpanCollector` 用 ThreadLocal，虚拟线程/异步下会失效 | v1.0 前必须解决（难题 2） |
 | agent 自身类加载未做严格隔离 | v0.2 |
-| 无单元测试框架与覆盖率门禁 | v0.1 |
+| JUnit 5 与 surefire 已接入并可离线运行；仍缺覆盖率门禁与 CI 测试报告 | v0.1 |
 | Maven Wrapper 未引入，依赖本机 Maven 3.9+ | v0.1 |
+| **`GenAiAttributes` 的属性名未对 OTel semconv 1.44.0 逐条核对**（开发沙箱无法访问 opentelemetry.io 的表格与 raw.githubusercontent.com） | v0.1 前必须核对，见类注释里的两个核对 URL |
+| 动态 attach（agentmain）路径未验证——开发沙箱禁止命名管道，`jcmd` 都不可用 | 首次推送到 GitHub 后由 Linux CI 覆盖 |
