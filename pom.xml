@@ -136,6 +136,16 @@
 
       mvn -o -Pwith-langchain4j verify
 
+    Run the whole reactor, not -pl on the integration module alone: with -pl, Maven also cannot see
+    the sibling Tomograph modules that have not been installed, and the failure then looks like a
+    broken build rather than a missing download.
+
+    Without the jar the failure is specific and is the useful kind:
+      Cannot access alimaven in offline mode and the artifact
+      dev.langchain4j:langchain4j-core:jar:1.21.0 has not been downloaded from it before.
+    That message names exactly what to fetch. `mvn validate` on this module proves nothing, by the
+    way - validate does not resolve dependencies, so the profile looks wired up whether it is or not.
+
     What it proves, and why nothing else can: the module reads its attributes reflectively, so the
     accessor names are strings (ADR 0008). Only a real jar can say whether the first candidate name
     is still the right one.
