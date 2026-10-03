@@ -28,6 +28,16 @@
       <artifactId>jackson-databind</artifactId>
     </dependency>
 
+    <!--
+      For the attribute keys. The report displays GenAI fields, and hard-coding
+      "gen_ai.request.model" in a renderer is how the vocabulary drifts apart: the spec
+      module exists so that a rename is one edit instead of a grep.
+    -->
+    <dependency>
+      <groupId>io.github.godhuino1-lang</groupId>
+      <artifactId>tomograph-semconv</artifactId>
+    </dependency>
+
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
