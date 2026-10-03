@@ -22,6 +22,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Only the diagnostics step needs this, and only to publish a file to a branch.
+permissions:
+  contents: write
+
 jobs:
   real-langchain4j:
     name: Real LangChain4j on JDK 21
@@ -37,9 +41,12 @@ jobs:
           cache: maven
 
       # No -o: this job exists precisely because it can download what the development machine
-      # cannot. If the download fails, that is a real failure worth seeing.
+      # cannot. The log is teed to a file because a failing run has to be diagnosable from outside
+      # this page - see the next step.
       - name: Build with the LangChain4j profile
-        run: mvn -B -ntp -Pwith-langchain4j verify
+        run: |
+          set -o pipefail
+          mvn -B -ntp -Pwith-langchain4j verify 2>&1 | tee build.log
 
       # Same reasoning as the attach test in ci.yml: a test that silently did not run and a test
       # that passed look identical from outside the job. This one has no skip path, so a missing
@@ -59,3 +66,48 @@ jobs:
             exit 1
           fi
           echo "LangChain4jRealFrameworkTest ran against the real framework: tests=$tests skipped=$skipped"
+
+      # Why a workflow publishes its own failure to a branch.
+      #
+      # The machine this project is developed on cannot read GitHub's web UI: its shell has no
+      # network at all, and the HTML pages do not come back. A failing run that exists only in the
+      # Actions page is therefore a failure nobody can diagnose - which would make this whole job
+      # useless precisely when it matters.
+      #
+      # So the tail of the log and the surefire report are committed to a branch, where they can be
+      # read as a file. The name carries the commit, because a branch ref is cached for a while and
+      # a stale diagnostic is worse than none.
+      #
+      # `if: failure()` plus `continue-on-error` means this can never turn a passing run red, and can
+      # never hide the real failure behind its own.
+      - name: Publish diagnostics on failure
+        if: failure()
+        continue-on-error: true
+        run: |
+          short=$(echo "${{ github.sha }}" | cut -c1-8)
+          {
+            echo "# LangChain4j integration run — FAILED"
+            echo
+            echo "- commit: \`${{ github.sha }}\`"
+            echo "- run: ${{ github.run_id }} (attempt ${{ github.run_attempt }})"
+            echo
+            echo "## build log, last 400 lines"
+            echo
+            echo '```'
+            tail -400 build.log 2>/dev/null || echo "(build.log not produced — the failure was before Maven ran)"
+            echo '```'
+            echo
+            echo "## surefire reports"
+            echo
+            echo '```'
+            cat tomograph-integration-tests/target/surefire-reports/*.txt 2>/dev/null \
+              || echo "(no surefire report — the failure came earlier, most likely at compile time)"
+            echo '```'
+          } > "DIAGNOSTICS-$short.md"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B ci-diagnostics
+          git add "DIAGNOSTICS-$short.md"
+          git commit -m "diagnostics for $short"
+          git push --force origin ci-diagnostics
