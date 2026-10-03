@@ -72,6 +72,14 @@ class AgentToOtlpEndToEndTest {
             assertTrue(appOutput.contains("tomograph") || appOutput.contains("[example] reply"),
                     "unexpected application output:\n" + appOutput);
 
+            // The rewriting path ran for real. This line can only be produced by bytecode the module
+            // inserted into FakeChatModel.chat(String) - no Java source in this repository calls
+            // ExampleProbe - so it proves the bytes were rewritten, loaded and executed inside a
+            // separate JVM that the agent attached itself to.
+            assertTrue(appOutput.contains("[example-probe] entered chat"),
+                    "the injected call never ran in the child JVM, so the rewrite did not reach it:\n"
+                            + appOutput);
+
             String payload = awaitBody(receivedBody, Duration.ofSeconds(20));
             System.out.println("[e2e] received " + payload.length() + " bytes: " + payload);
 

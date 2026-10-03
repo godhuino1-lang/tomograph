@@ -36,6 +36,22 @@
       <artifactId>tomograph-semconv</artifactId>
     </dependency>
     <!--
+      This module rewrites bytecode, so it needs ASM. That does NOT put ASM in the agent jar:
+      instrumentation modules are application-classpath plugins, and the application that wants its
+      framework observed carries both jars. The agent itself stays dependency-free (ADR 0003), which
+      is the whole reason the split exists.
+
+      The version is spelled out rather than managed in the parent, following the convention already
+      used by tomograph-javaagent: adding a module should not require editing two files. 9.9.1
+      because the whole ASM family is pinned there (ADR 0004), and only asm-core is needed here -
+      no advice adapter, no tree API.
+    -->
+    <dependency>
+      <groupId>org.ow2.asm</groupId>
+      <artifactId>asm</artifactId>
+      <version>9.9.1</version>
+    </dependency>
+    <!--
       Test scope only. DynamicAttachTest spawns a real JVM and attaches the built agent jar
       to it, which is the only way to prove the agentmain path: the development sandbox
       blocks named pipes, so the attach mechanism cannot be exercised there at all.
