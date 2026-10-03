@@ -116,6 +116,8 @@ Agent 是多轮的、可能异步、可能流式、可能在虚拟线程里并�
 | Windows 上 Java 输出中文会乱码 | 不传编码时输出 `Tomograph �ܿ�����ε�����`；传 `-Dstdout.encoding=UTF-8` 后正常 | 本机跑示例加 `-Dstdout.encoding=UTF-8`；Linux CI 默认 UTF-8 无此问题 |
 | **pwsh 在本沙箱完全没有对外网络** | 所有 `Invoke-RestMethod` / `Invoke-WebRequest` 一律抛异常，包括对 `api.github.com` | 任何"存在性 / 可用性"判断**不得用 `catch` 兜底成正面结论**。曾经因此把"网络不通"当成"github 用户名可用"，直接导致一次错误的技术决策。需要联网核实一律走 `web_fetch`，且必须能区分 404 与连接失败 |
 | **离线可用库清单是项目的一条硬边界** | `dev/langchain4j` 与 `org/springframework/ai` 完全不存在；`io/opentelemetry/*` 目录存在但 0 个 jar | 依赖必须事先确认 jar 真的在本地（看版本子目录，别只看 artifact 目录）；未缓存的依赖只能在联网环境预拉 |
+| **ASM 9.7 拒绝 Java 25/26 的 class 文件（major 69/70）** | 实测：同一源文件以 `--release 17/21/25/26` 编译后用不同 ASM 读取。9.7 对 69/70 抛 `IllegalArgumentException: Unsupported class file major version`（来自 `ClassReader` 构造函数，即宿主类加载路径上）；9.9.1 四者全部可读 | 插桩引擎的 ASM 家族必须统一钉 **9.9.1**（需一次预拉，见 [docs/prefetch-list.md](docs/prefetch-list.md)）；可插桩的 class 版本边界 = **61–70**。详见 [ADR 0004](docs/adr/0004-instrumentation-strategy.md) |
+| 本地仓库同类构件版本不齐 | `asm` 到 9.9.1，但 `asm-commons` 只到 9.7、`asm-util` 只到 8.0 | 任何"多构件配套使用"的库，都要逐个构件确认最高可用版本，不能只看其中一个 |
 
 ### 本地开发命令（本机沙箱约束下）
 
