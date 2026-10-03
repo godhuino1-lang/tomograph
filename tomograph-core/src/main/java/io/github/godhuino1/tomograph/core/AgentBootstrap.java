@@ -64,10 +64,8 @@ public final class AgentBootstrap {
             List<TomographModule> modules = loadModules(loader);
             SpanSink sink = resolveSink(options, loader);
             InstrumentationEngine engine = new InstrumentationEngine(modules, sink, options);
-
-            for (TomographModule module : modules) {
-                module.onInstall(engine);
-            }
+            // No onInstall loop here: the engine installs its own modules, because it is the Runtime
+            // they are handed. See the comment in its constructor for why that moved.
 
             boolean canRetransform = options.getBoolean("retransform", true);
             inst.addTransformer(engine, canRetransform);

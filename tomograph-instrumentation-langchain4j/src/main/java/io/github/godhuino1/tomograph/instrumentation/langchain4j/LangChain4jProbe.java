@@ -182,23 +182,40 @@ public final class LangChain4jProbe {
     }
 
     /**
-     * Maps the framework's {@code ModelProvider} enum onto the conventions' lowercase value.
+     * Maps the framework's {@code ModelProvider} enum onto the conventions' {@code gen_ai.provider.name}.
      *
-     * <p>{@code OTHER} means "the framework does not know", and it becomes an absent attribute rather
-     * than the literal string {@code other}: the conventions want a real provider name or nothing,
-     * and a plausible-looking placeholder is the kind of data that ends up in a dashboard.
+     * <p>An explicit table, because lowercasing the Java constant is wrong for most of them. The
+     * conventions use dotted lowercase values while the enum uses underscores:
+     * {@code OPEN_AI} is {@code openai}, {@code AMAZON_BEDROCK} is {@code aws.bedrock},
+     * {@code AZURE_OPEN_AI} is {@code azure.ai.openai}, and two different Google constants both map
+     * to {@code gcp.vertex_ai}. The first version of this method lowercased the enum name, which
+     * produced {@code open_ai} - a value no backend recognises, and one that would have been
+     * invisible here because the framework still worked.
      *
-     * <p><b>Caveat, and it is a real one:</b> compound names are not exact. The conventions use
-     * {@code gcp.vertex_ai} while lowercasing the Java constant yields {@code gcp_vertex_ai}. Doing
-     * that properly needs the real enum in front of us, which is one of the things the integration
-     * test against a real jar will surface.
+     * <p>The enum is LangChain4j's, and several of its constants have no counterpart in the
+     * conventions at all: {@code OLLAMA}, {@code JINA}, {@code VOYAGE_AI}, {@code TYPESAFE},
+     * {@code GITHUB_MODELS}, {@code MICROSOFT_FOUNDRY}. Those produce <b>no attribute</b> rather than
+     * an invented one. The conventions say the attribute identifies the "telemetry format flavor",
+     * and for a provider with no flavor there is nothing true to say; a plausible-looking value is
+     * indistinguishable from a real one and would silently corrupt any grouping by provider.
      */
-    private static String providerName(Object modelProvider) {
+    static String providerName(Object modelProvider) {
         if (!(modelProvider instanceof Enum<?> provider)) {
             return null;
         }
-        String name = provider.name();
-        return "OTHER".equals(name) ? null : name.toLowerCase(java.util.Locale.ROOT);
+        return switch (provider.name()) {
+            case "OPEN_AI" -> "openai";
+            case "ANTHROPIC" -> "anthropic";
+            case "AMAZON_BEDROCK" -> "aws.bedrock";
+            case "AZURE_OPEN_AI" -> "azure.ai.openai";
+            case "GOOGLE_AI_GEMINI" -> "gcp.gemini";
+            case "GOOGLE_GENAI" -> "gcp.gen_ai";
+            case "GOOGLE_VERTEX_AI_GEMINI", "GOOGLE_VERTEX_AI_ANTHROPIC" -> "gcp.vertex_ai";
+            case "COHERE" -> "cohere";
+            case "MISTRAL_AI" -> "mistral_ai";
+            case "WATSONX" -> "ibm.watsonx.ai";
+            default -> null;
+        };
     }
 
     private static String joinIfList(Object value) {

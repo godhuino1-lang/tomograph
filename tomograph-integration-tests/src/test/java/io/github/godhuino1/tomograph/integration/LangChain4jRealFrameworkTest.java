@@ -80,7 +80,10 @@ class LangChain4jRealFrameworkTest {
 
         @Override
         public ModelProvider provider() {
-            return ModelProvider.OPENAI;
+            // OPEN_AI, not OPENAI. The first version of this test guessed, and the compiler was the
+            // thing that said so - which is exactly the safety net that does not exist for the
+            // reflective accessor names the probe depends on.
+            return ModelProvider.OPEN_AI;
         }
     }
 

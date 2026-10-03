@@ -78,6 +78,23 @@ public final class InstrumentationEngine implements ClassFileTransformer, Tomogr
         byCutPoint.forEach((cutPoint, interested) -> routes.add(new SignatureRoute(
                 cutPoint, List.copyOf(interested), cutPoint.name().getBytes(StandardCharsets.UTF_8))));
         this.signatureRoutes = List.copyOf(routes);
+
+        // Modules are installed here, by the engine, because the engine is the Runtime they are
+        // handed. It used to be the caller's job, and that contract was invisible: the integration
+        // test built an engine directly, never called onInstall, and the module silently reported
+        // nothing - the probe's sink stayed at its no-op default. A lifecycle step that can be
+        // forgotten by the person writing the test that verifies the module is a step in the wrong
+        // place.
+        //
+        // One failing installer does not stop the others: a module that cannot start is a module
+        // that produces no data, and the others should still produce theirs.
+        for (TomographModule module : modules) {
+            try {
+                module.onInstall(this);
+            } catch (Throwable t) {
+                TomographLog.error("module " + module.id() + " failed to install and was skipped", t);
+            }
+        }
     }
 
     /** One cut point plus the modules that want it, with the name pre-encoded for the byte search. */

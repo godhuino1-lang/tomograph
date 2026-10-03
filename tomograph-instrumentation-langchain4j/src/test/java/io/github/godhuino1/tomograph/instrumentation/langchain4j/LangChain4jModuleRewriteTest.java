@@ -98,9 +98,15 @@ class LangChain4jModuleRewriteTest {
         }
     }
 
-    /** Mirrors {@code ChatModel.provider()}, which returns the framework's {@code ModelProvider}. */
+    /**
+     * Mirrors {@code ChatModel.provider()}, using the real enum's constant names - including
+     * {@code OPEN_AI} rather than {@code OPENAI}, which is what the first version of the integration
+     * test guessed and the compiler rejected.
+     */
     public enum FakeProvider {
-        OPENAI,
+        OPEN_AI,
+        AMAZON_BEDROCK,
+        OLLAMA,
         OTHER
     }
 
@@ -108,7 +114,7 @@ class LangChain4jModuleRewriteTest {
     public static class FakeModel {
 
         public FakeProvider provider() {
-            return FakeProvider.OPENAI;
+            return FakeProvider.OPEN_AI;
         }
 
         public FakeResponse doChat(FakeRequest request) {
@@ -240,6 +246,23 @@ class LangChain4jModuleRewriteTest {
                 "naming classes would miss the application's own implementations, which is the whole "
                         + "reason signature routing exists");
         assertEquals(Set.of(LangChain4jCutPoints.BLOCKING_DO_CHAT), module.targetMethods());
+    }
+
+    @Test
+    void providerNamesAreMappedToTheConventionsRatherThanLowercased() {
+        // The real enum uses underscores and the conventions use dotted lowercase, so "lowercase the
+        // name" produced amazon_bedrock where the conventions want aws.bedrock. That is a value no
+        // backend recognises, and it was invisible from the module's own tests because nothing here
+        // knew what the right answer was - the real enum is what showed it.
+        assertEquals("openai", LangChain4jProbe.providerName(FakeProvider.OPEN_AI));
+        assertEquals("aws.bedrock", LangChain4jProbe.providerName(FakeProvider.AMAZON_BEDROCK));
+
+        // Providers the conventions do not list contribute nothing rather than something plausible.
+        assertNull(LangChain4jProbe.providerName(FakeProvider.OLLAMA));
+        assertNull(LangChain4jProbe.providerName(FakeProvider.OTHER));
+
+        assertNull(LangChain4jProbe.providerName(null));
+        assertNull(LangChain4jProbe.providerName("not an enum"));
     }
 
     @Test
