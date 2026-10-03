@@ -47,5 +47,5 @@
 | JUnit 5 与 surefire 已接入并可离线运行；仍缺覆盖率门禁与 CI 测试报告 | v0.1 |
 | Maven Wrapper 未引入，依赖本机 Maven 3.9+ | v0.1 |
 | ~~`GenAiAttributes` 属性名未核对~~ **已核对并修正**：对着 `semantic-conventions-genai` 的 `model/gen-ai/registry.yaml`（commit `e07f4eb`）逐条比对。修正了 `gen_ai.token.type`（规范已删除，现为 `gen_ai.token.modality`）、标明 `gen_ai.system` 已从注册表移除；补上了缓存 token 拆分、工具调用参数与结果、检索、模态、plan/invoke_workflow 等漏掉的键。核对目标与结论记录在 `SemconvRevision` | 已还清 |
-| **OTLP/JSON 的编码细节未对规范逐条核对**（int64 写成字符串、traceId 用十六进制而非 base64、intValue 加引号、span kind 用数字、status.code 0/1/2） | v0.1 前必须核对，见 `OtlpPayloadBuilder` 类注释里的清单；当前由黄金测试锁死 |
+| ~~OTLP/JSON 的编码细节未核对~~ **已核对**：对着 OTLP proto **v1.11.1**（commit `b3f7558`）的 `docs/specification.md` 逐条验证，**五个假设全部确认正确**（十六进制 id 而非 base64；int64 与时间戳写成字符串；enum 必须用整数且名字 "MUST NOT be used"；`intValue` 加引号；`status.code` 0/1/2）。另记录两处刻意偏离规范 SHOULD 的地方：不重试 429/502/503/504；不用 gzip。核对目标记录在 `OtlpSpecRevision` | 已还清 |
 | ~~动态 attach（agentmain）路径未验证~~ **已由 CI 覆盖**：`DynamicAttachTest` 真起 JVM → attach → 加载 agent → 断言目标 JVM 日志；另有一个 CI 步骤强制它在 Linux 上**必须执行**（被跳过即构建失败） | 已还清 |

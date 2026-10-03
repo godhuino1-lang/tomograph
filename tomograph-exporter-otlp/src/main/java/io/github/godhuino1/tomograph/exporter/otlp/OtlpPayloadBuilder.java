@@ -9,25 +9,35 @@ import java.util.Map;
 /**
  * Turns captured spans into an OTLP/HTTP JSON {@code ExportTraceServiceRequest}.
  *
- * <h2>Specification details implemented by hand — each one is a silent-failure risk</h2>
+ * <h2>Specification details implemented by hand — each one a silent-failure risk</h2>
+ *
+ * <p><b>All five were verified</b> against {@link OtlpSpecRevision#SPEC_FILE} in
+ * {@link OtlpSpecRevision#REPOSITORY} at release {@link OtlpSpecRevision#VERIFIED_RELEASE}
+ * (commit {@link OtlpSpecRevision#VERIFIED_COMMIT}). Every one held. The check also corrected
+ * how strict one of them is, and surfaced two deliberate deviations from {@code SHOULD}
+ * clauses, which are recorded in {@link OtlpHttpSpanExporter}.
  *
  * <ul>
- *   <li><b>64-bit integers are JSON strings.</b> {@code startTimeUnixNano} and
- *       {@code endTimeUnixNano} are {@code int64} in the proto definition, and proto3's
- *       JSON mapping writes them quoted. Emitting bare numbers loses precision in every
- *       JavaScript-based backend, which shows up as timestamps landing in 1970.</li>
- *   <li><b>{@code traceId}/{@code spanId} are hex</b>, not base64. Most {@code bytes}
- *       fields in proto3 JSON are base64, and the OTLP spec carves out an exception for
- *       these two. Base64 here produces spans that backends silently drop.</li>
- *   <li><b>{@code intValue} is also quoted</b>, for the same int64 reason as above.</li>
- *   <li><b>Span kind is a number, not a name</b> ({@code 1}=INTERNAL, {@code 3}=CLIENT).</li>
- *   <li><b>{@code status.code} uses 0/1/2</b> for UNSET/OK/ERROR — note that UNSET is 0,
- *       so a span with no status must still emit {@code {"code":0}} rather than nothing,
- *       otherwise some backends render it as an error.</li>
+ *   <li><b>64-bit integers are JSON strings.</b> The specification states this for
+ *       {@code int64}/{@code fixed64} and names the timestamp fields —
+ *       {@code startTimeUnixNano}, {@code endTimeUnixNano} — as covered. Bare numbers lose
+ *       precision in JavaScript-based backends, which shows up as timestamps landing in 1970.</li>
+ *   <li><b>{@code traceId}/{@code spanId} are hex, not base64.</b> The specification carves
+ *       these two out of the standard proto3 JSON mapping by name — "they are not
+ *       base64-encoded as is defined in the standard Protobuf JSON Mapping" — and gives a
+ *       worked example. Base64 here produces spans that backends silently drop.</li>
+ *   <li><b>Enum values MUST be integers.</b> Stricter than proto3's JSON mapping, which also
+ *       accepts enum name strings: OTLP says names "MUST NOT be used". So {@code kind} is
+ *       {@code 1}/{@code 3} and {@code status.code} is {@code 0}/{@code 1}/{@code 2}, never
+ *       {@code "SPAN_KIND_CLIENT"}.</li>
+ *   <li><b>{@code intValue} is quoted</b>, being an {@code int64} like any other.</li>
+ *   <li><b>{@code status.code} of 0 means UNSET</b>, so a span with no status must still emit
+ *       {@code {"code":0}} rather than omitting the field — otherwise some backends render
+ *       an unset status as an error.</li>
  * </ul>
  *
- * <p>All of the above are on the "verify against the spec" list in ROADMAP.md, because the
- * development sandbox has no route to the specification text.
+ * <p>One further rule is satisfied by construction rather than by care: senders SHOULD NOT
+ * emit empty envelopes, and the exporter only sends a non-empty batch.
  */
 public final class OtlpPayloadBuilder {
 

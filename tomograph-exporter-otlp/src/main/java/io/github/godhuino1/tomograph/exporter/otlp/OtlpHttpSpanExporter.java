@@ -32,10 +32,21 @@ import java.util.concurrent.atomic.AtomicLong;
  *       counted. Observability must never be the reason a service fails.</li>
  * </ol>
  *
- * <p>Deliberately absent: retries and a persistent retry buffer. Both add unbounded
- * memory growth in exactly the situation where the host is already in trouble. If the
- * backend cannot keep up with live traffic, that is a backend problem and it should be
- * visible as dropped spans, not papered over with an OOM.
+ * <h2>Deviations from the specification, recorded rather than left implicit</h2>
+ *
+ * <p>Both were checked against {@link OtlpSpecRevision#SPEC_FILE}; neither breaks a MUST.
+ *
+ * <ol>
+ *   <li><b>No retries.</b> The specification says requests answered with 429, 502, 503 or 504
+ *       SHOULD be retried, and that all other 4xx/5xx MUST NOT be. We retry nothing. Retrying
+ *       properly requires a queue that outlives the request, and an unbounded one grows
+ *       fastest in precisely the situation where the host is already in trouble. The
+ *       specification's other requirement here — that a client record that data was not
+ *       delivered — is met: failures are counted in {@link #failedCount()} and logged.</li>
+ *   <li><b>No gzip.</b> Servers MUST support gzip and clients MAY use it; we send
+ *       uncompressed and never set {@code Content-Encoding}. That costs bandwidth on large
+ *       batches, and is the first thing to add if payload size ever becomes a problem.</li>
+ * </ol>
  *
  * <p>Also absent: {@code HttpClient.close()}. It exists only from Java 21, and this module
  * targets Java 17.
