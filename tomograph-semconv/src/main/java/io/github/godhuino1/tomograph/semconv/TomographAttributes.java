@@ -57,6 +57,14 @@ public final class TomographAttributes {
     /** Size of the class file bytes the instrumenter was handed. Diagnostics for the agent itself. */
     public static final String CLASSFILE_BYTES = "tomograph.classfile.bytes";
 
+    /**
+     * Which cut point produced this span, as {@code methodName + descriptor}.
+     *
+     * <p>Diagnostics, and worth the bytes: when a span looks wrong, the first question is which rule
+     * produced it, and with signature-based routing (ADR 0006) more than one rule can be in play.
+     */
+    public static final String CUT_POINT = "tomograph.cut_point";
+
     private TomographAttributes() {
     }
 }

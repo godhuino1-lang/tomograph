@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>io.github.godhuino1-lang</groupId>
+    <artifactId>tomograph-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>tomograph-instrumentation-langchain4j</artifactId>
+  <name>Tomograph :: Instrumentation :: LangChain4j</name>
+  <description>LangChain4j cut points: instrument model calls through the doChat funnel</description>
+
+  <!--
+    NOTE WHAT IS NOT HERE: LangChain4j.
+
+    This module instruments LangChain4j and does not depend on it, even at compile scope. Two
+    reasons, and both are load-bearing:
+
+      1. Routing is by method signature (ADR 0006), and every value crossing into the probe is
+         passed as Object (ADR 0008). Nothing in this module - including the bytecode it injects -
+         names a LangChain4j type. So a framework upgrade cannot turn "an attribute is missing" into
+         a linkage error in the host application.
+      2. It compiles and its logic is unit-tested in an environment with no network, where the jar
+         cannot be fetched. A module that could only be written once a download succeeded would put
+         a whole milestone behind one network call.
+
+    What that costs: the attribute extraction is reflective, and the accessor names are verified
+    against the framework's source rather than its compiler-checked API. The integration test
+    against a real jar is therefore not optional - it is what proves the first candidate name is
+    still right.
+  -->
+  <dependencies>
+    <dependency>
+      <groupId>io.github.godhuino1-lang</groupId>
+      <artifactId>tomograph-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.github.godhuino1-lang</groupId>
+      <artifactId>tomograph-semconv</artifactId>
+    </dependency>
+
+    <!-- The module rewrites bytecode, so it carries ASM itself. See ADR 0007. -->
+    <dependency>
+      <groupId>org.ow2.asm</groupId>
+      <artifactId>asm</artifactId>
+      <version>9.9.1</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+    </dependency>
+  </dependencies>
+</project>
