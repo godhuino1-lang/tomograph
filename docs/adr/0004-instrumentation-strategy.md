@@ -32,7 +32,7 @@
 
 1. **整个 ASM 家族统一钉在 `9.9.1`**：`asm`、`asm-commons`、`asm-util`、`asm-tree`。
    混用版本会引入一类只有在特定 class 文件版本上才暴露的、极难定位的故障。
-2. 这需要**一次联网预拉**（`asm-commons:9.9.1` 与 `asm-util:9.9.1` 不在冻结仓库里）。命令见 [`docs/prefetch-list.md`](prefetch-list.md)。
+2. 这需要**一次联网预拉**（`asm-commons:9.9.1` 与 `asm-util:9.9.1` 不在冻结仓库里）。命令见 [`docs/prefetch-list.md`](../prefetch-list.md)。
 3. **把「版本拒绝」当成可容纳的逐类失败，而不是致命错误。** 引擎必须捕获它、记一次日志、返回原始字节码，让这个类照常加载。也就是说：*采不到某个类的数据*是可以接受的，*因为这个类让业务起不来*不可以。
 4. 兼容矩阵新增一行：**可插桩的 class 文件版本为 61–70（Java 17–26）**；更新的版本一律跳过并告警。
 
@@ -58,5 +58,5 @@
 
 ## 相关
 
-- 环境约束的完整清单见 [ARCHITECTURE.md](../ARCHITECTURE.md) 的「本机与 CI 环境的硬约束」
+- 环境约束的完整清单见 [ARCHITECTURE.md](../../ARCHITECTURE.md) 的「本机与 CI 环境的硬约束」
 - 切点选择（难题 1）属于另一份决策，见 ARCHITECTURE.md
