@@ -25,5 +25,18 @@
       <groupId>io.github.godhuino1-lang</groupId>
       <artifactId>tomograph-api</artifactId>
     </dependency>
+    <!--
+      Test scope only. DynamicAttachTest spawns a real JVM and attaches the built agent jar
+      to it, which is the only way to prove the agentmain path: the development sandbox
+      blocks named pipes, so the attach mechanism cannot be exercised there at all.
+    -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+    </dependency>
   </dependencies>
 </project>
