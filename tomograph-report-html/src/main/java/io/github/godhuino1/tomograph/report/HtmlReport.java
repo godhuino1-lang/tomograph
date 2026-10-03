@@ -94,20 +94,9 @@ public final class HtmlReport {
         html.append("</p>\n");
 
         if (tree.isPartial()) {
-            html.append("<p class=\"warning\"><b>This capture is not a complete trace.</b> ");
-            if (tree.orphanCount() > 0) {
-                html.append(tree.orphanCount())
-                        .append(tree.orphanCount() == 1 ? " span references" : " spans reference")
-                        .append(" a parent that is not in this file, which usually means an export batch was cut off");
-            }
-            if (tree.orphanCount() > 0 && tree.unreachableCount() > 0) {
-                html.append("; and ");
-            }
-            if (tree.unreachableCount() > 0) {
-                html.append(tree.unreachableCount())
-                        .append(" cannot be reached from any root at all, which means the file contains a cycle");
-            }
-            html.append(". They are shown at the top level. Do not read this as a complete agent run: steps may be missing.</p>\n");
+            html.append("<p class=\"warning\"><b>This capture is not a complete trace.</b> ")
+                    .append(escape(String.join("; ", tree.partialReasons())))
+                    .append(". They are shown at the top level. Do not read this as a complete agent run: steps may be missing.</p>\n");
         }
         html.append("</header>\n<main>\n");
 

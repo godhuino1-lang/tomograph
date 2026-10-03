@@ -134,6 +134,27 @@ public final class SpanTree {
         return orphanCount > 0 || unreachableCount > 0;
     }
 
+    /**
+     * Why this capture is not a complete trace, in plain sentences — one per condition.
+     *
+     * <p>Deliberately the single source of this diagnosis. The HTML report and the CLI each used to
+     * build their own sentence, and when {@link #isPartial()} was widened to cover cycles only one
+     * of them was updated: the command line went on saying "0 span(s) reference a parent that is
+     * not in this file", which is a warning that contradicts itself and is worse than silence.
+     */
+    public List<String> partialReasons() {
+        List<String> reasons = new ArrayList<>();
+        if (orphanCount > 0) {
+            reasons.add(orphanCount + (orphanCount == 1 ? " span references" : " spans reference")
+                    + " a parent that is not in this file, which usually means an export batch was cut off");
+        }
+        if (unreachableCount > 0) {
+            reasons.add(unreachableCount + (unreachableCount == 1 ? " span is" : " spans are")
+                    + " unreachable from any root, which means the file contains a cycle");
+        }
+        return List.copyOf(reasons);
+    }
+
     /** Distinct trace ids present, in first-seen order. */
     public List<String> traceIds() {
         List<String> ids = new ArrayList<>();

@@ -64,9 +64,10 @@ public final class ReportMain {
                     + tree.errorCount() + " errors");
             if (tree.isPartial()) {
                 // Said out loud on the console too, not only inside the report: a partial capture
-                // that is only disclosed in a file nobody opened yet is not disclosed.
-                System.out.println("  WARNING: " + tree.orphanCount()
-                        + " span(s) reference a parent that is not in this file - the capture is incomplete");
+                // that is only disclosed in a file nobody has opened yet is not disclosed. The
+                // wording comes from SpanTree so that the report and the console cannot drift apart.
+                System.out.println("  WARNING: this capture is not a complete trace - "
+                        + String.join("; ", tree.partialReasons()));
             }
         } catch (IOException | RuntimeException e) {
             // RuntimeException included on purpose: a malformed payload must produce a message, not
