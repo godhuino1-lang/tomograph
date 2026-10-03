@@ -63,7 +63,8 @@ OTLP/HTTP 导出器（零第三方依赖，40 个测试）、W3C Trace Context�
 
 - **空白版 / 答案版**：`learning/day05-asm/` 与 `learning/answers/day05-asm/`
 - **要做**：用 `ClassReader` + `ClassWriter` + 自写 `MethodVisitor` 往方法里插指令，实现**耗时与入参**上报——也就是关 2 当初那句验收的真正归属
-- **完成标志**：`javap -c -p` 能看到你插入的指令；改写后的类能被 JVM 正常加载并执行；`CheckClassAdapter` 校验通过
+- **完成标志**：`.\check-day03.ps1` 输出 `ALL CHECKS PASS`——五个方法各自的耗时与参数都正确，且宿主应用输出逐字节不变；并能用 `javap -c -p` 看到你插入的指令
+- **可选进阶**：`CheckClassAdapter` 校验你生成的字节码。它属于 `asm-util`，而本地仓库目前只有 5.0.3 / 8.0——**补上 9.9.1 之后再执行**（见 `docs/prefetch-list.md`）。把这个写成必过项是错的：当前环境根本做不到
 - **必须能答**：为什么 `retransformClasses` 不能给已加载的类加字段？`COMPUTE_FRAMES` 干了什么？为什么本关**不用** `AdviceAdapter`？
 
 ### 并行（第 1–3 周，约 4 小时）：LLM 应用速成
