@@ -51,3 +51,5 @@
 | ~~OTLP/JSON 的编码细节未核对~~ **已核对**：对着 OTLP proto **v1.11.1**（commit `b3f7558`）的 `docs/specification.md` 逐条验证，**五个假设全部确认正确**（十六进制 id 而非 base64；int64 与时间戳写成字符串；enum 必须用整数且名字 "MUST NOT be used"；`intValue` 加引号；`status.code` 0/1/2）。另记录两处刻意偏离规范 SHOULD 的地方：不重试 429/502/503/504；不用 gzip。核对目标记录在 `OtlpSpecRevision` | 已还清 |
 | ~~动态 attach（agentmain）路径未验证~~ **已由 CI 覆盖**：`DynamicAttachTest` 真起 JVM → attach → 加载 agent → 断言目标 JVM 日志；另有一个 CI 步骤强制它在 Linux 上**必须执行**（被跳过即构建失败） | 已还清 |
 | **agent 的"零第三方依赖"这条纪律只写在文档里，没有机器检查**。报告模块可以用 Jackson（见 ADR 0005），而这条界线很容易被无意越过——比如有人为了复用把报告模块加进 agent 的依赖树 | v0.2：用 `maven-enforcer-plugin` 的 `bannedDependencies`（或在 CI 里解析 `mvn dependency:tree`）钉住 `tomograph-javaagent` 的依赖树。**写在文档里的纪律会被违反** |
+| **ASM 上游已到 `9.10.1`（2026-05），我们还钉在 `9.9.1`**——因为冻结的本地仓库只有到 9.9.1 | 有网络时评估升级，并**重新测量**可插桩的 class 版本上界（ADR 0004 那张表必须重跑，不能假定它还成立） |
+| **`docs/glossary.md` 的链接没有自动检查**（正文里的外链不参与 CI） | 低频：每次改这份文档时手动过一遍；如果外链开始腐烂，再考虑加一个链接检查脚本 |
