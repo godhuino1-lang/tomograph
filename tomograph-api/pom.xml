@@ -12,12 +12,24 @@
 
   <artifactId>tomograph-api</artifactId>
   <name>Tomograph :: API</name>
-  <description>SPI and data model. Zero third-party dependencies by design.</description>
+  <description>SPI and data model. Zero compile-scope dependencies by design.</description>
 
   <!--
-    Deliberately has NO <dependencies> section, and must keep it that way:
-    every instrumentation module and every host application depends on this
-    artifact, so anything added here becomes a version conflict in someone
-    else's build.
+    No compile-scope dependencies, and that must stay true: every instrumentation module
+    and every host application depends on this artifact, so anything added at compile
+    scope becomes a version conflict in somebody else's build.
+
+    JUnit is test scope only - it is never shipped and never appears on the classpath of
+    anything that depends on this module.
   -->
+  <dependencies>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+    </dependency>
+  </dependencies>
 </project>

@@ -49,11 +49,13 @@ public final class FakeChatModelModule implements TomographModule {
         TomographLog.info("module " + id() + " matched " + internalClassName
                 + " (" + classfileBuffer.length + " bytes, loader=" + describe(loader) + ")");
 
+        // INTERNAL, not LLM_CALL: this span describes something happening inside the JVM
+        // during class loading. Labelling it a model call would put a network hop to an AI
+        // provider into a backend's service map - a hop that never happened.
         sink.accept(TomographSpan
-                .builder(newId(), newId(), TomographSpan.Kind.LLM_CALL, "load " + internalClassName)
+                .builder(newId(), newId(), TomographSpan.Kind.INTERNAL, "instrument " + internalClassName)
                 .attribute("tomograph.module", id())
                 .attribute("tomograph.classfile.bytes", classfileBuffer.length)
-                .attribute("gen_ai.system", "fake")
                 .status(TomographSpan.Status.OK, null)
                 .build());
 

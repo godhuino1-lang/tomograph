@@ -63,6 +63,23 @@ public record TomographSpan(
         return startEpochNanos + durationNanos;
     }
 
+    /**
+     * Epoch nanoseconds read from the wall clock.
+     *
+     * <p><b>Deliberately not {@link System#nanoTime()}.</b> That is a monotonic clock with
+     * an arbitrary origin — typically system boot — whereas OTLP's {@code startTimeUnixNano}
+     * means "nanoseconds since the Unix epoch". Using it stamps every exported span as
+     * January 1970, which is precisely what this project did on its first end-to-end run.
+     *
+     * <p>Precision is milliseconds: the JDK cannot read epoch nanoseconds directly, and
+     * inventing extra digits would be worse than admitting the limit. Sub-millisecond
+     * precision matters for durations rather than for start timestamps, so durations come
+     * from {@code System.nanoTime()} deltas instead — see {@link #durationNanos()}.
+     */
+    public static long epochNanosNow() {
+        return System.currentTimeMillis() * 1_000_000L;
+    }
+
     /** Small builder: instrumented call sites fill 6-12 attributes and would be unreadable otherwise. */
     public static final class Builder {
 
@@ -71,7 +88,7 @@ public record TomographSpan(
         private final Kind kind;
         private final String name;
         private String parentSpanId;
-        private long startEpochNanos = System.nanoTime();
+        private long startEpochNanos = epochNanosNow();
         private long durationNanos;
         private final Map<String, Object> attributes = new java.util.LinkedHashMap<>();
         private Status status = Status.UNSET;
