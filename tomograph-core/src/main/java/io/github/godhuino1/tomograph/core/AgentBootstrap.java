@@ -95,9 +95,27 @@ public final class AgentBootstrap {
 
     private static List<TomographModule> loadModules(ClassLoader loader) {
         List<TomographModule> found = new ArrayList<>();
-        for (TomographModule module : ServiceLoader.load(TomographModule.class, loader)) {
-            TomographLog.debug("discovered module " + module.id() + " via " + loader);
-            found.add(module);
+        try {
+            for (TomographModule module : ServiceLoader.load(TomographModule.class, loader)) {
+                TomographLog.debug("discovered module " + module.id() + " via " + loader);
+                found.add(module);
+            }
+        } catch (java.util.ServiceConfigurationError e) {
+            // Found by running the README's own quickstart: it put only the application's classes on
+            // the classpath, the example module needs ASM, and ServiceLoader could not even reflect
+            // on the module's constructor. The result was "startup failed" plus a NoClassDefFoundError
+            // stack trace - truthful, and useless to the person reading it.
+            //
+            // Two things are worth saying out loud here. First, what to do: a module is an
+            // application-classpath plugin, so its own dependencies have to be there too (ADR 0007).
+            // Second, the limitation: one unloadable provider aborts the whole iteration, so other
+            // modules further along the classpath are lost as well. Working around that means reading
+            // the service files by hand, which is not worth doing until somebody actually hits it.
+            TomographLog.error("a Tomograph module on the classpath could not be loaded, and the "
+                    + "ServiceLoader iteration stopped there - so any module after it is lost too. "
+                    + "If the module is yours, its own dependencies must be on the application's "
+                    + "classpath as well: modules are application plugins, not contents of the agent "
+                    + "jar (see docs/adr/0007-modules-are-application-plugins.md). Cause: " + e, e);
         }
         return List.copyOf(found);
     }

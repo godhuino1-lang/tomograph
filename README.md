@@ -56,15 +56,29 @@ cd tomograph
 mvn -B -ntp clean package
 ```
 
-跑一遍带 agent 的示例（示例是一个刻意写得很笨的假 Agent）：
+跑一遍带 agent 的示例（示例是一个刻意写得很笨的假 Agent）。
+
+注意 classpath 上有**两样东西**：应用自己的类，**以及插桩模块自己的依赖**——模块是应用 classpath 上的插件，不是 agent jar 的内容（见 [ADR 0007](docs/adr/0007-modules-are-application-plugins.md)）。
+少放一个，agent 会启动失败并**明确告诉你**是哪个模块加载不了，而宿主应用照常运行、不受影响：
 
 ```bash
+# 示例插桩模块改写字节码，所以它需要 ASM。版本钉在 9.9.1（见 ADR 0004），
+# 路径按你本机的 Maven 仓库调整（本项目的在 ARCHITECTURE.md 里记着）。
+ASM=~/.m2/repository/org/ow2/asm/asm/9.9.1/asm-9.9.1.jar
+
 java -javaagent:tomograph-javaagent/target/tomograph-agent.jar \
-     -cp tomograph-examples/tomograph-example-fakeagent/target/classes \
+     -cp "tomograph-examples/tomograph-example-fakeagent/target/classes:$ASM" \
      io.github.godhuino1.tomograph.examples.fakeagent.Main
 ```
 
-你应该看到 agent 在 `stderr` 上打印启动横幅，并报告它匹配到了示例里的插桩模块——**这证明 premain → transformer → SPI 这条路已经打通**。
+你应该看到 agent 在 `stderr` 上打印启动横幅、报告它**改写**了示例类，随后出现：
+
+```
+[agent] module example-fakeagent rewrote .../FakeChatModel (1784 -> 1879 bytes, loader=app)
+[example-probe] entered chat
+```
+
+**最后那行来自被插入的字节码**：这个仓库里没有任何 Java 源码调用 `ExampleProbe`，所以它出现只可能是"字节码被改写 → 被 JVM 加载 → 被执行"——**这就是 `premain → transformer → 模块 → 改写后的字节码真的在跑` 这条完整链路的证据**。
 
 ### 本地开发注意事项
 
