@@ -171,7 +171,7 @@ public final class InstrumentationEngine implements ClassFileTransformer, Tomogr
             result = new ArrayList<>(byName);
         }
         for (SignatureRoute route : signatureRoutes) {
-            if (!mentions(classfileBuffer, route.nameUtf8)) {
+            if (!ByteScan.contains(classfileBuffer, route.nameUtf8)) {
                 continue;
             }
             if (!DeclaredMethods.declares(classfileBuffer, route.cutPoint.name(), route.cutPoint.descriptor())) {
@@ -191,28 +191,4 @@ public final class InstrumentationEngine implements ClassFileTransformer, Tomogr
         return (result == null) ? List.of() : result;
     }
 
-    /**
-     * Plain byte search for a literal string in the class file.
-     *
-     * <p>Deliberately naive: the needle is a method name, so a handful of bytes, and the input is one
-     * class file. What matters is that it allocates nothing, never throws, and cannot produce a false
-     * negative - the name of a declared method is always a UTF-8 constant pool entry (JVMS 4.6).
-     * The real cost of this path is measured with JMH in v0.1 rather than assumed away here.
-     */
-    private static boolean mentions(byte[] classBytes, byte[] needle) {
-        if (needle.length == 0 || classBytes.length < needle.length) {
-            return false;
-        }
-        int last = classBytes.length - needle.length;
-        outer:
-        for (int start = 0; start <= last; start++) {
-            for (int offset = 0; offset < needle.length; offset++) {
-                if (classBytes[start + offset] != needle[offset]) {
-                    continue outer;
-                }
-            }
-            return true;
-        }
-        return false;
-    }
 }
