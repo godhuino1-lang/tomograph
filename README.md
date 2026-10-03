@@ -122,6 +122,7 @@ java -javaagent:tomograph-javaagent/target/tomograph-agent.jar \
 - [ROADMAP.md](ROADMAP.md) — 里程碑与时间表
 - [docs/learning-path.md](docs/learning-path.md) — 分阶段学习与推进计划：每阶段的交付物、完成标志与必读材料
 - [docs/glossary.md](docs/glossary.md) — **术语表 + 资料清单**：每个词一句白话、在哪一关会遇到、该看什么材料
+- [docs/reading-the-code.md](docs/reading-the-code.md) — **怎么读这个项目**：十站路线，每站写明前置知识与"读完应该能回答什么"（七站不需要字节码知识）
 - [docs/prior-art.md](docs/prior-art.md) — 同类项目对照与定位：谁已经做了什么、我们的差异点在哪、风险是什么
 
 ## 许可
