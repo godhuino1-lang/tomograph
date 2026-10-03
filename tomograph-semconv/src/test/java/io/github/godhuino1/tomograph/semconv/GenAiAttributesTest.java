@@ -11,17 +11,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Guards the shape of {@link GenAiAttributes}, not its specific values alone.
+ * Guards the shape of {@link GenAiAttributes} and the integrity of {@link SemconvRevision}.
  *
  * <p>Two different failures are covered:
  * <ol>
  *   <li><b>Namespace drift.</b> A key such as {@code genai.usage.input_tokens} (missing
- *       underscore) or {@code tomograph.input_tokens} is accepted by every backend and
- *       silently lands in a dashboard nobody queries. Reflection over the fields catches
- *       this for keys that do not exist yet, which a hand-written list of assertions
- *       never can.</li>
- *   <li><b>Accidental rename.</b> These strings are an external contract; changing one
- *       breaks existing dashboards. Pinning them forces the change to be deliberate.</li>
+ *       underscore) or {@code tomograph.input_tokens} is accepted by every backend and lands
+ *       in a dashboard nobody queries. Reflection over the fields catches this for keys that
+ *       do not exist yet, which a hand-written list of assertions never can.</li>
+ *   <li><b>Accidental rename.</b> These strings are an external contract; changing one breaks
+ *       existing dashboards. Pinning them forces the change to be deliberate.</li>
  * </ol>
  */
 class GenAiAttributesTest {
@@ -61,19 +60,42 @@ class GenAiAttributesTest {
 
     @Test
     void criticalKeysHaveTheDocumentedSpelling() {
-        // These five cover the acceptance criteria: model, tokens, tool identity, agent identity.
+        // Covering the acceptance criteria: model, tokens (including the cache split that cost
+        // accounting depends on), tool identity and its side effects, agent identity, retrieval.
         assertEquals("gen_ai.request.model", GenAiAttributes.REQUEST_MODEL);
         assertEquals("gen_ai.usage.input_tokens", GenAiAttributes.USAGE_INPUT_TOKENS);
         assertEquals("gen_ai.usage.output_tokens", GenAiAttributes.USAGE_OUTPUT_TOKENS);
+        assertEquals("gen_ai.usage.cache_read.input_tokens", GenAiAttributes.USAGE_CACHE_READ_INPUT_TOKENS);
+        assertEquals("gen_ai.usage.cache_write.input_tokens", GenAiAttributes.USAGE_CACHE_WRITE_INPUT_TOKENS);
         assertEquals("gen_ai.tool.name", GenAiAttributes.TOOL_NAME);
+        assertEquals("gen_ai.tool.call.arguments", GenAiAttributes.TOOL_CALL_ARGUMENTS);
+        assertEquals("gen_ai.tool.call.result", GenAiAttributes.TOOL_CALL_RESULT);
         assertEquals("gen_ai.agent.name", GenAiAttributes.AGENT_NAME);
+        assertEquals("gen_ai.retrieval.documents", GenAiAttributes.RETRIEVAL_DOCUMENTS);
     }
 
     @Test
-    void deprecatedSystemKeyIsKeptForBackwardCompatibility() {
-        // Deleting this would make the project unable to read traces it produced itself.
+    void legacyKeysAreKeptForReadingOldTracesButNotEmitting() {
+        // gen_ai.system was removed from the registry entirely, and gen_ai.token.type was
+        // replaced by gen_ai.token.modality. Both are kept only so that a trace produced by an
+        // older build can still be interpreted; the replacements are what new code emits.
         assertEquals("gen_ai.system", GenAiAttributes.SYSTEM);
         assertEquals("gen_ai.provider.name", GenAiAttributes.PROVIDER_NAME);
+        assertEquals("gen_ai.token.modality", GenAiAttributes.TOKEN_MODALITY);
+    }
+
+    @Test
+    void theVerifiedSpecRevisionIsRecordedAndPlausible() {
+        // The previous "verify this later" note pointed at URLs that died before anyone
+        // followed them. Recording the revision as data is what makes the next check possible.
+        assertEquals(40, SemconvRevision.VERIFIED_COMMIT.length(),
+                "a git commit hash is 40 hex characters: " + SemconvRevision.VERIFIED_COMMIT);
+        assertTrue(SemconvRevision.VERIFIED_COMMIT.matches("[0-9a-f]{40}"),
+                "not a lowercase hex commit hash: " + SemconvRevision.VERIFIED_COMMIT);
+        assertTrue(SemconvRevision.REPOSITORY.startsWith("https://github.com/open-telemetry/"),
+                SemconvRevision.REPOSITORY);
+        assertTrue(SemconvRevision.ATTRIBUTE_REGISTRY_FILE.endsWith(".yaml"),
+                SemconvRevision.ATTRIBUTE_REGISTRY_FILE);
     }
 
     private static List<String> allPublicStringConstants() throws Exception {
@@ -87,7 +109,7 @@ class GenAiAttributesTest {
                 keys.add((String) field.get(null));
             }
         }
-        assertTrue(keys.size() > 20, "reflection found suspiciously few keys: " + keys.size());
+        assertTrue(keys.size() > 40, "reflection found suspiciously few keys: " + keys.size());
         return keys;
     }
 }
