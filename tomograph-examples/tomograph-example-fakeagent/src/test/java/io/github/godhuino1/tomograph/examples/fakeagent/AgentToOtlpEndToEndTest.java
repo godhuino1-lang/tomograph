@@ -146,21 +146,8 @@ class AgentToOtlpEndToEndTest {
                 + timeout.toSeconds() + "s; the agent ran but exported nothing");
     }
 
-    /**
-     * Mirrors the resolver in {@code DynamicAttachTest}: surefire's working directory is the
-     * module directory and the agent module sits two levels up, so hard-coding ".." would be
-     * wrong. Searched upward rather than counted, and printed above so a wrong answer is visible.
-     */
+    /** Delegates to the one place that knows where the agent jar is built. */
     private static Path resolveAgentJar() {
-        Path relative = Path.of("tomograph-javaagent", "target", "tomograph-agent.jar");
-        Path dir = Path.of("").toAbsolutePath();
-        for (int level = 0; level < 4 && dir != null; level++) {
-            Path candidate = dir.resolve(relative);
-            if (Files.isRegularFile(candidate)) {
-                return candidate;
-            }
-            dir = dir.getParent();
-        }
-        return Path.of("").toAbsolutePath().resolve(relative);
+        return TestAgentJar.resolve();
     }
 }

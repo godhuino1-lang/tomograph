@@ -43,8 +43,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  */
 class DynamicAttachTest {
 
-    private static final String JAR_SYSTEM_PROPERTY = "tomograph.agent.jar";
-    private static final int MAX_LEVELS_UP = 4;
+    // The agent-jar lookup, and its -Dtomograph.agent.jar override, now live in TestAgentJar.
 
     @Test
     void loadsTheAgentIntoAnAlreadyRunningJvm(@TempDir Path tempDir) throws Exception {
@@ -75,24 +74,13 @@ class DynamicAttachTest {
     }
 
     /**
-     * Finds {@code tomograph-javaagent/target/tomograph-agent.jar} by walking up from the
-     * working directory, so the test does not depend on how deep the module sits.
+     * Finds the agent jar. Delegates to {@link TestAgentJar}, which is now the one place that knows
+     * the layout and honours {@code -Dtomograph.agent.jar}; this test and the two jar-based ones had
+     * three near-identical copies of that lookup, differing only in the override, which is how one
+     * of them ends up stale.
      */
     private static Path resolveAgentJar() {
-        String override = System.getProperty(JAR_SYSTEM_PROPERTY);
-        if (override != null && !override.isBlank()) {
-            return Path.of(override).toAbsolutePath().normalize();
-        }
-        Path relative = Path.of("tomograph-javaagent", "target", "tomograph-agent.jar");
-        Path dir = Path.of("").toAbsolutePath();
-        for (int level = 0; level < MAX_LEVELS_UP && dir != null; level++) {
-            Path candidate = dir.resolve(relative);
-            if (Files.isRegularFile(candidate)) {
-                return candidate;
-            }
-            dir = dir.getParent();
-        }
-        return Path.of("").toAbsolutePath().resolve(relative);
+        return TestAgentJar.resolve();
     }
 
     private static Process startTargetJvm(Path log) throws Exception {
