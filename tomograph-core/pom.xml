@@ -19,5 +19,18 @@
       <groupId>io.github.godhuino1-lang</groupId>
       <artifactId>tomograph-api</artifactId>
     </dependency>
+    <!--
+      Test scope only. InstrumentationEngineTest pins the two properties that protect the
+      host application: routing is exact, and any module failure - Errors included - is
+      contained as an all-or-nothing discard of that class's rewrite.
+    -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+    </dependency>
   </dependencies>
 </project>
