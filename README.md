@@ -35,7 +35,7 @@ java -javaagent:tomograph-agent.jar -jar your-agent-app.jar
 前置：JDK 17+（开发用 26 也可以）、Maven 3.9+。
 
 ```bash
-git clone https://github.com/<you>/tomograph.git
+git clone https://github.com/Godhuino1-lang/tomograph.git
 cd tomograph
 mvn -B -ntp clean package
 ```
@@ -45,7 +45,7 @@ mvn -B -ntp clean package
 ```bash
 java -javaagent:tomograph-javaagent/target/tomograph-agent.jar \
      -cp tomograph-examples/tomograph-example-fakeagent/target/classes \
-     io.github.tomograph.examples.fakeagent.Main
+     io.github.godhuino1.tomograph.examples.fakeagent.Main
 ```
 
 你应该看到 agent 在 `stderr` 上打印启动横幅，并报告它匹配到了示例里的插桩模块——**这证明 premain → transformer → SPI 这条路已经打通**。

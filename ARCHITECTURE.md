@@ -60,8 +60,8 @@
 插桩模块通过 `java.util.ServiceLoader` 发现，因此第三方可以**不改 Tomograph 源码**就新增对某个框架的支持——这是 3 年后生态能长大的前提。
 
 ```
-tomograph-api/src/main/java/io/github/tomograph/api/TomographModule.java
-META-INF/services/io.github.tomograph.api.TomographModule   ← 模块自己声明
+tomograph-api/src/main/java/io/github/godhuino1/tomograph/api/TomographModule.java
+META-INF/services/io.github.godhuino1.tomograph.api.TomographModule   ← 模块自己声明
 ```
 
 `InstrumentationEngine` 在构造时把 `targetClassNames()` 反转成 `类名 → 模块列表` 的索引，避免每次类加载都线性扫描所有模块——**这是热路径，不能有 O(n) 查找**。
@@ -110,6 +110,8 @@ Agent 是多轮的、可能异步、可能流式、可能在虚拟线程里并�
 | **Maven 本地仓库在工作区外且只读** | 实际仓库 = `D:\java+python\maven1`（由 Maven 安装目录 `conf/settings.xml` 指定）；写入测试报「访问被拒绝」 | 不能新增任何未缓存的依赖；需要新依赖时必须在能联网的环境（如 CI）拉取后再用 |
 | 已缓存的 shade 版本只有 3.2.4 / 3.4.1 / 3.5.0 / **3.6.0** / 3.6.1 | 逐目录检查 jar 是否存在；**3.6.2 只有空目录没有 jar** | `plugin.shade.version` 钉 **3.6.0**。改版本前先确认 jar 真的存在，别只看目录名 |
 | Windows 上 Java 输出中文会乱码 | 不传编码时输出 `Tomograph �ܿ�����ε�����`；传 `-Dstdout.encoding=UTF-8` 后正常 | 本机跑示例加 `-Dstdout.encoding=UTF-8`；Linux CI 默认 UTF-8 无此问题 |
+| **pwsh 在本沙箱完全没有对外网络** | 所有 `Invoke-RestMethod` / `Invoke-WebRequest` 一律抛异常，包括对 `api.github.com` | 任何"存在性 / 可用性"判断**不得用 `catch` 兜底成正面结论**。曾经因此把"网络不通"当成"github 用户名可用"，直接导致一次错误的技术决策。需要联网核实一律走 `web_fetch`，且必须能区分 404 与连接失败 |
+| **离线可用库清单是项目的一条硬边界** | `dev/langchain4j` 与 `org/springframework/ai` 完全不存在；`io/opentelemetry/*` 目录存在但 0 个 jar | 依赖必须事先确认 jar 真的在本地（看版本子目录，别只看 artifact 目录）；未缓存的依赖只能在联网环境预拉 |
 
 ### 本地开发命令（本机沙箱约束下）
 

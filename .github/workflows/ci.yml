@@ -41,7 +41,7 @@ jobs:
         run: |
           java -javaagent:tomograph-javaagent/target/tomograph-agent.jar \
                -cp tomograph-examples/tomograph-example-fakeagent/target/classes \
-               io.github.tomograph.examples.fakeagent.Main
+               io.github.godhuino1.tomograph.examples.fakeagent.Main
 
       - name: Upload agent jar
         if: matrix.java == '21' && runner.os == 'Linux'

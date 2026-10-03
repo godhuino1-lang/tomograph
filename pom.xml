@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>io.github.tomograph</groupId>
+  <groupId>io.github.godhuino1-lang</groupId>
   <artifactId>tomograph-parent</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
@@ -55,17 +55,17 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>io.github.tomograph</groupId>
+        <groupId>io.github.godhuino1-lang</groupId>
         <artifactId>tomograph-api</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>io.github.tomograph</groupId>
+        <groupId>io.github.godhuino1-lang</groupId>
         <artifactId>tomograph-core</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>io.github.tomograph</groupId>
+        <groupId>io.github.godhuino1-lang</groupId>
         <artifactId>tomograph-semconv</artifactId>
         <version>${project.version}</version>
       </dependency>

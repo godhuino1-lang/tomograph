@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>io.github.tomograph</groupId>
+    <groupId>io.github.godhuino1-lang</groupId>
     <artifactId>tomograph-examples</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
@@ -22,7 +22,7 @@
       dependency on the agent.
     -->
     <dependency>
-      <groupId>io.github.tomograph</groupId>
+      <groupId>io.github.godhuino1-lang</groupId>
       <artifactId>tomograph-api</artifactId>
     </dependency>
   </dependencies>
