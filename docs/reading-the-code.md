@@ -8,27 +8,46 @@
 | # | 文件 | 行数 | 需要什么 | 大约 |
 |---|---|---|---|---|
 | **1** | `tomograph-api/…/api/TomographSpan.java` | 152 | 会写 Java 就行 | 15 min |
-| **2** | `tomograph-api/…/api/MethodCutPoint.java` | 49 | 同上 | 5 min |
-| **3** | `tomograph-api/…/api/TomographModule.java` | 85 | 同上 | 10 min |
-| **4** | `tomograph-semconv/…/semconv/SpanName.java` | 196 | 同上（就是字符串表） | 15 min |
-| **5** | `tomograph-semconv/…/semconv/GenAiAttributes.java` | 213 | 同上 | 15 min |
-| 5a | `tomograph-semconv/…/semconv/SemconvRevision.java` | 46 | 同上（可选） | 3 min |
-| 5b | `tomograph-semconv/…/semconv/TomographAttributes.java` | 70 | 同上（可选） | 3 min |
-| **6** | `tomograph-semconv/…/semconv/TraceContext.java` | 200 | 十六进制、位运算 | 20 min |
-| **7** ⚠️ | `tomograph-core/…/core/ByteScan.java` | 66 | **常量池是什么** | 10 min |
-| **8** ⚠️ | `tomograph-core/…/core/DeclaredMethods.java` | 137 | 同上 ← **读完它等于做完了关 1** | 25 min |
-| **9** ⚠️ | `tomograph-core/…/core/InstrumentationEngine.java` | 211 | 同上 + 类加载器 | 25 min |
-| **10** | `tomograph-core/…/core/AgentBootstrap.java` | 195 | 知道 `premain` 是什么 | 20 min |
-| **11** | `tomograph-exporter-otlp/…/OtlpPayloadBuilder.java` | 187 | JSON 基础 | 20 min |
-| **12** | `tomograph-report-html/…/report/SpanTree.java` | 182 | 会写 Java 就行 | 15 min |
-| **13** | `tomograph-report-html/…/report/HtmlReport.java` | 300 | 同上 | 20 min |
-| **14** ⚠️ | `tomograph-instrumentation-langchain4j/…/LangChain4jCutPoints.java` | 59 | **ASM（关 3 之后）** | 5 min |
-| **15** ⚠️ | `tomograph-instrumentation-langchain4j/…/LangChain4jModule.java` | 183 | 同上 | 25 min |
-| **16** ⚠️ | `tomograph-instrumentation-langchain4j/…/LangChain4jProbe.java` | 275 | 同上 | 25 min |
+| **2** | `tomograph-api/…/api/MethodCutPoint.java` | 38 | 同上 | 5 min |
+| **3** | `tomograph-api/…/api/TomographModule.java` | 62 | 同上 | 10 min |
+| **4** | `tomograph-semconv/…/semconv/SpanName.java` | 175 | 同上（就是字符串表） | 15 min |
+| **5** | `tomograph-semconv/…/semconv/GenAiAttributes.java` | 175 | 同上 | 15 min |
+| **6** | `tomograph-semconv/…/semconv/SemconvRevision.java` | 41 | 同上 | 3 min |
+| **7** | `tomograph-semconv/…/semconv/TomographAttributes.java` | 70 | 同上 | 3 min |
+| **8** | `tomograph-semconv/…/semconv/TraceContext.java` | 200 | 十六进制、位运算 | 20 min |
+| **9** ⚠️ | `tomograph-core/…/core/ByteScan.java` | 65 | **常量池是什么** | 10 min |
+| **10** ⚠️ | `tomograph-core/…/core/DeclaredMethods.java` | 137 | 同上 ← **读完它等于做完了关 1** | 25 min |
+| **11** ⚠️ | `tomograph-core/…/core/InstrumentationEngine.java` | 211 | 同上 + 类加载器 | 25 min |
+| **12** | `tomograph-core/…/core/AgentBootstrap.java` | 195 | 知道 `premain` 是什么 | 20 min |
+| **13** | `tomograph-exporter-otlp/…/OtlpPayloadBuilder.java` | 187 | JSON 基础 | 20 min |
+| **14** | `tomograph-report-html/…/report/SpanTree.java` | 182 | 会写 Java 就行 | 15 min |
+| **15** | `tomograph-report-html/…/report/HtmlReport.java` | 300 | 同上 | 20 min |
+| **16** ⚠️ | `tomograph-instrumentation-langchain4j/…/LangChain4jCutPoints.java` | 59 | **ASM（关 3 之后）** | 5 min |
+| **17** ⚠️ | `tomograph-instrumentation-langchain4j/…/LangChain4jModule.java` | 183 | 同上 | 25 min |
+| **18** ⚠️ | `tomograph-instrumentation-langchain4j/…/LangChain4jProbe.java` | 275 | 同上 | 25 min |
 
-> 上表里的 `…` 都代表 `src/main/java/io/github/godhuino1/tomograph/`。
->
-> 或者让 PowerShell 一次按顺序全开出来（**最左边那个标签页就是第 1 个**）：
+**完整路径**（仓库内相对路径，一行一个，可以直接复制）：
+
+```
+tomograph-api/src/main/java/io/github/godhuino1/tomograph/api/TomographSpan.java
+tomograph-api/src/main/java/io/github/godhuino1/tomograph/api/MethodCutPoint.java
+tomograph-api/src/main/java/io/github/godhuino1/tomograph/api/TomographModule.java
+tomograph-semconv/src/main/java/io/github/godhuino1/tomograph/semconv/SpanName.java
+tomograph-semconv/src/main/java/io/github/godhuino1/tomograph/semconv/GenAiAttributes.java
+tomograph-semconv/src/main/java/io/github/godhuino1/tomograph/semconv/SemconvRevision.java
+tomograph-semconv/src/main/java/io/github/godhuino1/tomograph/semconv/TomographAttributes.java
+tomograph-semconv/src/main/java/io/github/godhuino1/tomograph/semconv/TraceContext.java
+tomograph-core/src/main/java/io/github/godhuino1/tomograph/core/ByteScan.java
+tomograph-core/src/main/java/io/github/godhuino1/tomograph/core/DeclaredMethods.java
+tomograph-core/src/main/java/io/github/godhuino1/tomograph/core/InstrumentationEngine.java
+tomograph-core/src/main/java/io/github/godhuino1/tomograph/core/AgentBootstrap.java
+tomograph-exporter-otlp/src/main/java/io/github/godhuino1/tomograph/exporter/otlp/OtlpPayloadBuilder.java
+tomograph-report-html/src/main/java/io/github/godhuino1/tomograph/report/SpanTree.java
+tomograph-report-html/src/main/java/io/github/godhuino1/tomograph/report/HtmlReport.java
+tomograph-instrumentation-langchain4j/src/main/java/io/github/godhuino1/tomograph/instrumentation/langchain4j/LangChain4jCutPoints.java
+tomograph-instrumentation-langchain4j/src/main/java/io/github/godhuino1/tomograph/instrumentation/langchain4j/LangChain4jModule.java
+tomograph-instrumentation-langchain4j/src/main/java/io/github/godhuino1/tomograph/instrumentation/langchain4j/LangChain4jProbe.java
+```
 
 ```powershell
 $root = 'D:\github\tomograph'
