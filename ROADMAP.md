@@ -41,7 +41,7 @@
 ## 待办：仓库正式化（开源首发前必做）
 
 - [ ] 通过 GitHub 模板添加 `LICENSE`（Apache-2.0）
-- [ ] 补英文 `README.md`，中文移到 `README.zh-CN.md`
+- [ ] 补英文 `README.md`，中文移到 `README.zh-CN.md` —— **是否仍要做，见 [ADR 0009](docs/adr/0009-chinese-comments.md)**：代码注释已统一为中文，所以"英文 README"现在是一个**门面**决定（要不要让国际读者找到这个项目），而不再是"和代码保持一致"
 - [ ] 加 CI / 版本 / 覆盖率徽章
 - [ ] `v0.1.0` tag + GitHub Release，附 `tomograph-agent.jar`
 - [ ] 写一篇「为什么 Java 生态需要一个 Agent 观测层」的发布文章 —— **核心论证已经查明并记录在 [docs/prior-art.md](docs/prior-art.md)**：官方 agent 覆盖厂商 SDK 而非框架层，且这个空白的成因（LangChain4j 不走 `openai-java`）是可解释、可检验的
