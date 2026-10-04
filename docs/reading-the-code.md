@@ -1,127 +1,145 @@
-# 怎么读这个项目的代码（十站路线）
+# 读代码的顺序（平铺清单，从第 1 个开始）
 
-## 先看这个结论
+**规则**：从第 1 个往下读，**不要跳**。每个文件 5–25 分钟。
+标 ⚠️ 的四个需要"字节码基础"，**读不懂就直接跳过**，回头再来。
 
-**63 个 Java 文件里，你**现在**就能读懂大部分。** 真正需要"字节码知识"的只有 3 个文件，其余只需要你会写 Java。
+> **如果你只有 30 分钟**：只读第 1、2、3 个。它们最简单，也最能把这个项目在干什么说清楚。
 
-所以别从头读到尾——那是最劝退的读法。按下面十站走，每站 5–25 分钟，**每站都告诉你"前置是什么"和"读完应该能回答什么"**。
+| # | 文件 | 行数 | 需要什么 | 大约 |
+|---|---|---|---|---|
+| **1** | `tomograph-api/…/api/TomographSpan.java` | 152 | 会写 Java 就行 | 15 min |
+| **2** | `tomograph-api/…/api/MethodCutPoint.java` | 49 | 同上 | 5 min |
+| **3** | `tomograph-api/…/api/TomographModule.java` | 85 | 同上 | 10 min |
+| **4** | `tomograph-semconv/…/semconv/SpanName.java` | 196 | 同上（就是字符串表） | 15 min |
+| **5** | `tomograph-semconv/…/semconv/GenAiAttributes.java` | 213 | 同上 | 15 min |
+| 5a | `tomograph-semconv/…/semconv/SemconvRevision.java` | 46 | 同上（可选） | 3 min |
+| 5b | `tomograph-semconv/…/semconv/TomographAttributes.java` | 70 | 同上（可选） | 3 min |
+| **6** | `tomograph-semconv/…/semconv/TraceContext.java` | 200 | 十六进制、位运算 | 20 min |
+| **7** ⚠️ | `tomograph-core/…/core/ByteScan.java` | 66 | **常量池是什么** | 10 min |
+| **8** ⚠️ | `tomograph-core/…/core/DeclaredMethods.java` | 137 | 同上 ← **读完它等于做完了关 1** | 25 min |
+| **9** ⚠️ | `tomograph-core/…/core/InstrumentationEngine.java` | 211 | 同上 + 类加载器 | 25 min |
+| **10** | `tomograph-core/…/core/AgentBootstrap.java` | 195 | 知道 `premain` 是什么 | 20 min |
+| **11** | `tomograph-exporter-otlp/…/OtlpPayloadBuilder.java` | 187 | JSON 基础 | 20 min |
+| **12** | `tomograph-report-html/…/report/SpanTree.java` | 182 | 会写 Java 就行 | 15 min |
+| **13** | `tomograph-report-html/…/report/HtmlReport.java` | 300 | 同上 | 20 min |
+| **14** ⚠️ | `tomograph-instrumentation-langchain4j/…/LangChain4jCutPoints.java` | 59 | **ASM（关 3 之后）** | 5 min |
+| **15** ⚠️ | `tomograph-instrumentation-langchain4j/…/LangChain4jModule.java` | 183 | 同上 | 25 min |
+| **16** ⚠️ | `tomograph-instrumentation-langchain4j/…/LangChain4jProbe.java` | 275 | 同上 | 25 min |
 
-遇到不认识的词 → 查 [glossary.md](glossary.md)（按"在哪一关会遇到"分组，每条一句白话）。
+> 上表里的 `…` 都代表 `src/main/java/io/github/godhuino1/tomograph/`。
+>
+> 或者让 PowerShell 一次按顺序全开出来（**最左边那个标签页就是第 1 个**）：
+
+```powershell
+$root = 'D:\github\tomograph'
+$tail = 'src\main\java\io\github\godhuino1\tomograph'
+$files = @(
+  "$root\tomograph-api\$tail\api\TomographSpan.java",
+  "$root\tomograph-api\$tail\api\MethodCutPoint.java",
+  "$root\tomograph-api\$tail\api\TomographModule.java",
+  "$root\tomograph-semconv\$tail\semconv\SpanName.java",
+  "$root\tomograph-semconv\$tail\semconv\GenAiAttributes.java",
+  "$root\tomograph-semconv\$tail\semconv\SemconvRevision.java",
+  "$root\tomograph-semconv\$tail\semconv\TomographAttributes.java",
+  "$root\tomograph-semconv\$tail\semconv\TraceContext.java",
+  "$root\tomograph-core\$tail\core\ByteScan.java",
+  "$root\tomograph-core\$tail\core\DeclaredMethods.java",
+  "$root\tomograph-core\$tail\core\InstrumentationEngine.java",
+  "$root\tomograph-core\$tail\core\AgentBootstrap.java",
+  "$root\tomograph-exporter-otlp\$tail\exporter\otlp\OtlpPayloadBuilder.java",
+  "$root\tomograph-report-html\$tail\report\SpanTree.java",
+  "$root\tomograph-report-html\$tail\report\HtmlReport.java",
+  "$root\tomograph-instrumentation-langchain4j\$tail\instrumentation\langchain4j\LangChain4jCutPoints.java",
+  "$root\tomograph-instrumentation-langchain4j\$tail\instrumentation\langchain4j\LangChain4jModule.java",
+  "$root\tomograph-instrumentation-langchain4j\$tail\instrumentation\langchain4j\LangChain4jProbe.java"
+)
+code @files
+```
 
 ---
 
-## 第 1 站：一个 span 长什么样
+# 每份文件看什么
 
-**读**：[`TomographSpan.java`](../tomograph-api/src/main/java/io/github/godhuino1/tomograph/api/TomographSpan.java)（约 150 行）
+## 1. `TomographSpan.java` —— 一个 span 长什么样
 
-**前置**：record、builder 模式、不可变对象——**你都会**。
+- **最上面那 10 个字段**：一个 span 的身份证（谁、属于哪次追踪、何时开始、多久、带了什么、成功还是失败）
+- **为什么不可变的 record 还需要 builder**（注释里写了）
+- **`epochNanosNow()`**：这是我们真实的坑——曾经用 `System.nanoTime()`，把所有 span 打成 **1970 年**，而当时所有单元测试都是绿的
 
-**读完应该能回答**：
-- 一个 span 有哪些字段？哪些是必需的，哪些可选？
-- 为什么时间戳用 `long` 纳秒而不是 `Instant`？
+**读完回答**：为什么 `attributes` 是 `Map<String, Object>`，而不是给每个字段单独定义一个？
 
-## 第 2 站：规范是怎么落进代码的
+## 2. `MethodCutPoint.java` —— 为什么"只匹配方法名"会出事
 
-**读**：[`SpanName.java`](../tomograph-semconv/src/main/java/io/github/godhuino1/tomograph/semconv/SpanName.java)、[`GenAiAttributes.java`](../tomograph-semconv/src/main/java/io/github/godhuino1/tomograph/semconv/GenAiAttributes.java)
+**读完回答**：为什么这个类型**必须**带描述符，而不能只带方法名？
 
-**前置**：无——**就是两张字符串表**。
+## 3. `TomographModule.java` —— 模块的接口（设计核心）
 
-**读完应该能回答**：
-- 为什么 `retrieval` 的主语是数据源而不是模型？
-- `MethodCutPoint` 为什么必须带描述符？（去 `MethodCutPoint.java` 的注释里找，那是一个真实的坑）
+**读完回答**：为什么"返回 `null`"表示"别动这个类"？为什么一个模块可以**只声明方法签名、不声明类名**？
 
-## 第 3 站：trace id / span id 的规则
+## 4. `SpanName.java` —— 规范怎么落进代码
 
-**读**：[`TraceContext.java`](../tomograph-semconv/src/main/java/io/github/godhuino1/tomograph/semconv/TraceContext.java)（约 200 行，含测试）
+- 十八个操作名，每个的**主语规则**都不同（模型 / 数据源 / agent 名 / workflow 名 / 没有主语）
+- 类注释里有一整段"**差点改错**"的记录：我怀疑 `chat` 改名了、怀疑 `generate_content` 是编的，**两个怀疑都是错的**
 
-**前置**：十六进制、位运算、`SecureRandom`——**你都会**。
+**读完回答**：`retrieval` 的主语为什么是数据源，而不是模型？
 
-**读完应该能回答**：
-- 为什么 span id 是 16 位十六进制而 trace id 是 32 位？
-- 为什么"全 0"是非法 id？
-- **我们曾经用 UUID 当 span id，错在哪？**（这是个真实事故，测试里留着）
+## 5. `GenAiAttributes.java` —— 属性键表 + 一次真实纠错
 
-## 第 4 站：插桩模块的接口（这一站是设计的核心）
+类注释记录了核对的全过程：**`gen_ai.token.type` 已经不存在了**，而继续发它会产出任何后端都不认识的属性——**而且这个错误从一开始就是隐形的**，因为没有任何东西会校验属性名。
 
-**读**：[`TomographModule.java`](../tomograph-api/src/main/java/io/github/godhuino1/tomograph/api/TomographModule.java)、[`MethodCutPoint.java`](../tomograph-api/src/main/java/io/github/godhuino1/tomograph/api/MethodCutPoint.java)
+**读完回答**：为什么"未核对的假设"要写成一个**可核对的目标版本号**，而不是一句"待办"？
 
-**前置**：接口、`ServiceLoader`（查术语表 D 组）——**注释本身就把设计意图讲完了**。
+## 6. `TraceContext.java` —— id 的规则
 
-**读完应该能回答**：
-- 为什么这个接口的一个方法返回 `null` 是"别动这个类"？
-- 为什么一个模块可以**只声明方法签名**、不声明类名？
+**读完回答**：为什么 span id 是 16 位十六进制、trace id 是 32 位？为什么全 0 是非法？**我们曾经用 UUID 当 span id，错在哪？**
 
-## 第 5 站：引擎（第一个"难"的文件）
+## 7 ⚠️ `ByteScan.java` —— 最小的一次"读字节"
 
-**读**：[`InstrumentationEngine.java`](../tomograph-core/src/main/java/io/github/godhuino1/tomograph/core/InstrumentationEngine.java)（约 200 行）
+**读完回答**：为什么"在 class 字节里搜一个方法名"这件事**不可能漏**？（提示：方法名必然在常量池里）
 
-**前置**：`Map`/`List`、类加载器的基本概念（术语表 B 组）、**常量池**这个概念（A 组，一句话：class 文件的字典）。
+## 8 ⚠️ `DeclaredMethods.java` —— 手写的 class 文件扫描器
 
-**读完应该能回答**：
-- 为什么精确类名路由是"一次哈希查找"，而签名路由不是？
-- **两级过滤为什么是"可靠"的而不只是"快"的？**（提示：一个声明了某方法的类，它的方法名必然在常量池里——所以第一级不会漏）
-- 一个模块抛异常时，引擎为什么丢弃**整个类**的改写，而不是跳过那个模块？
-
-## 第 6 站：手写的 class 文件扫描器 ← **读完这站，你等于做完了关 1**
-
-**读**：[`DeclaredMethods.java`](../tomograph-core/src/main/java/io/github/godhuino1/tomograph/core/DeclaredMethods.java)（约 160 行）
-
-**前置**：关 1 的那 6 个词（魔数 / 常量池 / major version / access_flags / 槽位 / 描述符）。
-
-**读完应该能回答**：
+**读完回答**：
 - 它怎么跳过字段、直接走到方法表？
-- **Long/Double 占两个槽位**这条规则在代码里是哪一行？（和你作业里踩的是同一个坑）
-- 它遇到不认识的常量池 tag 时为什么返回 `false` 而不是抛异常？
+- **Long/Double 占两个槽位**这条规则在代码里是哪一行？（和你作业 1 是同一个坑）
+- 遇到不认识的常量池 tag，它为什么返回 `false` 而不是抛异常？
 
-> **这一站和你作业 1 是同一件事的两个方向**：作业是"把内容打印出来"，这里是"只回答一个问题"。
-> 你做完作业 1，回来看这一站会觉得"这不就是我刚写的东西吗"。
+> **这一份和你作业 1 是同一件事的两个方向**：作业是"把内容打印出来"，它是"只回答一个问题"。
 
-## 第 7 站：启动引导与纪律
+## 9 ⚠️ `InstrumentationEngine.java` —— 引擎
 
-**读**：[`AgentBootstrap.java`](../tomograph-core/src/main/java/io/github/godhuino1/tomograph/core/AgentBootstrap.java)（约 200 行）
+**读完回答**：
+- 为什么类名路由是"一次哈希查找"，而签名路由不是？
+- **两级过滤为什么是"可靠"的，而不只是"快"的？**
+- 一个模块抛异常时，为什么丢弃**整个类**的改写，而不是只跳过那个模块？
 
-**前置**：`premain` / `agentmain`（关 2 会学）。
+## 10. `AgentBootstrap.java` —— 启动纪律
 
-**读完应该能回答**：
-- 为什么每个可能失败的地方都包在 `catch (Throwable)` 里？
-- 为什么模块的类加载器要从"当前线程的上下文加载器"取？
+**读完回答**：为什么每个可能失败的地方都包在 `catch (Throwable)` 里？
 
-## 第 8 站：OTLP 编码的五个陷阱
+## 11. `OtlpPayloadBuilder.java` —— proto3 JSON 的五个陷阱
 
-**读**：[`OtlpPayloadBuilder.java`](../tomograph-exporter-otlp/src/main/java/io/github/godhuino1/tomograph/exporter/otlp/OtlpPayloadBuilder.java)（类注释就列了五个）
+类注释就把五个都列了。**读完回答**：为什么 64 位整数要写成**字符串**？为什么 enum 只能用整数（proto3 允许名字，**OTLP 明令禁止**）？
 
-**前置**：JSON 基础——**你都会**。
+## 12. `SpanTree.java` —— 环形数据会怎么毁掉一个天真的实现
 
-**读完应该能回答**：
-- 为什么 `traceId` 用十六进制而不是 base64？（proto3 标准 JSON 里 `bytes` 是 base64，OTLP 特意例外）
-- 为什么 64 位整数要写成**字符串**？（JS 的 number 精度）
-- enum 为什么只能用整数？（proto3 允许名字，**OTLP 明令禁止**）
+**读完回答**：A 的父是 B、B 的父是 A，会发生什么？
 
-## 第 9 站：真实的切点（关 3 之后再来，收获最大）
+## 13. `HtmlReport.java` —— 不可信输入
 
-**读**：[`LangChain4jCutPoints.java`](../tomograph-instrumentation-langchain4j/src/main/java/io/github/godhuino1/tomograph/instrumentation/langchain4j/LangChain4jCutPoints.java)、[`LangChain4jModule.java`](../tomograph-instrumentation-langchain4j/src/main/java/io/github/godhuino1/tomograph/instrumentation/langchain4j/LangChain4jModule.java)、[`LangChain4jProbe.java`](../tomograph-instrumentation-langchain4j/src/main/java/io/github/godhuino1/tomograph/instrumentation/langchain4j/LangChain4jProbe.java)
+**读完回答**：为什么所有插进 HTML 的值都要转义？为什么百分比格式化必须指定 `Locale.ROOT`？
 
-**前置**：ASM 的 `ClassVisitor`/`MethodVisitor`（关 3）+ 栈的基本概念。
+## 14–16 ⚠️ LangChain4j 三件（**关 3 之后再来**）
 
-**读完应该能回答**：
+**读完回答**：
+- 切点为什么选**最内层的那个漏斗方法**（`doChat`），而不是任何一个外层方法？
 - 注入的字节码里为什么**一个框架类型都不出现**？
-- `DUP` 那一条是干什么的？（提示：响应既要被上报、又要被返回）
-- 为什么 response 是探针的**第一个**参数，尽管它是第一个被压栈的？
-
-## 第 10 站：另一个方向的工程（可选，轻松）
-
-**读**：[`HtmlReport.java`](../tomograph-report-html/src/main/java/io/github/godhuino1/tomograph/report/HtmlReport.java)、[`SpanTree.java`](../tomograph-report-html/src/main/java/io/github/godhuino1/tomograph/report/SpanTree.java)
-
-**前置**：无。
-
-**读完应该能回答**：
-- 为什么所有插入 HTML 的值都要转义？（数据来自被观测的应用，是不可信输入）
-- **环状数据**（A 的父是 B、B 的父是 A）会怎么毁掉一个天真的实现？
+- `DUP` 那一条是干什么的？为什么 response 是探针的**第一个**参数？
 
 ---
 
-## 读不动的时候
+# 读不动的时候
 
-1. **别硬读**。停在那一站，把不懂的那一行原样发给我，我讲那一行。
-2. **跳过去**。第 5、6、9 站看不懂很正常（它们要么需要关 1 的知识，要么需要关 3 的）。**先把能读的读完**，你会发现自己其实懂不少。
-3. **写下来**。任何"这里为什么这样"的问题记在纸上；答案往往就在同一份文件的注释里——这个项目的注释写得比正文多，是故意的。
+1. **别硬读**。停在那一行，**把那一行原样发给我**，我只讲那一行。
+2. **跳过 ⚠️**。第 7、8、9 个需要关 1 的知识，第 14–16 个需要关 3 的。**先把不需要的读完**，你会发现自己懂不少。
+3. **先写作业也行**。作业 1 做完再回来读第 8 个，会突然变得很简单。
